@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "text": "Wer hat beim ersten Date länger auf sich warten lassen?",
+    "options": [
+      "Person A",
+      "Person B"
+    ],
+    "correctOption": 1
+  },
+  {
+    "id": 2,
+    "text": "Wer braucht morgens länger im Bad?",
+    "options": [
+      "Person A",
+      "Person B"
+    ]
+  },
+  {
+    "id": 3,
+    "text": "Wer hat zuerst „Ich liebe dich“ gesagt?",
+    "options": [
+      "Person A",
+      "Person B"
+    ],
+    "correctOption": 0
+  },
+  {
+    "id": 4,
+    "text": "Wer würde eher spontan einen Urlaub buchen?",
+    "options": [
+      "Person A",
+      "Person B"
+    ]
+  },
+  {
+    "id": 5,
+    "text": "Wer gewinnt häufiger Diskussionen?",
+    "options": [
+      "Person A",
+      "Person B"
+    ]
+  }
+]

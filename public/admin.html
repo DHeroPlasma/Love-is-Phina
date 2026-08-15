@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hochzeitsspiel – Admin</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="admin-page">
+  <main class="admin-layout">
+    <section id="adminLogin" class="card admin-login">
+      <p class="eyebrow">Spielleitung</p>
+      <h1>Admin-Ansicht</h1>
+      <form id="adminForm">
+        <label>
+          Admin-Schlüssel
+          <input id="adminKeyInput" type="password" required />
+        </label>
+        <button type="submit">Öffnen</button>
+        <p id="adminError" class="error"></p>
+      </form>
+    </section>
+
+    <div id="dashboard" class="hidden">
+      <header class="admin-header">
+        <div>
+          <p class="eyebrow">Hochzeitsspiel</p>
+          <h1>Spielleitung</h1>
+        </div>
+        <div id="connectionState" class="pill">verbunden</div>
+      </header>
+
+      <section class="dashboard-grid">
+        <article class="card join-card">
+          <h2>Mitmachen</h2>
+          <img id="qrCode" alt="QR-Code zum Spiel" />
+          <div id="joinUrl" class="join-url"></div>
+          <p class="muted">Laptop und Smartphones müssen im selben WLAN sein.</p>
+        </article>
+
+        <article class="card stage-card">
+          <div class="top-row">
+            <span id="phaseBadge" class="pill"></span>
+            <span id="answerCounter" class="muted"></span>
+          </div>
+
+          <div id="stageEmpty">
+            <h2>Bereit?</h2>
+            <p>Wähle unten eine Frage aus und starte sie.</p>
+          </div>
+
+          <div id="stageQuestion" class="hidden">
+            <p class="eyebrow">Aktuelle Frage</p>
+            <h2 id="stageQuestionText"></h2>
+            <div id="stageOptions" class="stage-options"></div>
+            <div id="stageResults"></div>
+
+            <div class="button-row">
+              <button id="revealButton" type="button">Antworten aufdecken</button>
+              <button id="finishButton" type="button" class="secondary">Spiel beenden</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="card participants-card">
+          <h2>Teilnehmende <span id="participantCount"></span></h2>
+          <div id="participants"></div>
+        </article>
+
+        <article class="card questions-card">
+          <h2>Fragen</h2>
+          <div id="questionList"></div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/admin.js"></script>
+</body>
+</html>

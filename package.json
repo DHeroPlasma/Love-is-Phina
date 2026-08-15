@@ -19,6 +19,9 @@
   },
   "homepage": "https://github.com/DHeroPlasma/Love-is-Phina#readme",
   "dependencies": {
-    "express": "^5.2.1"
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.3"
   }
 }

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hochzeitsspiel</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="guest-page">
+  <main class="container">
+    <section id="loginCard" class="card">
+      <p class="eyebrow">Willkommen</p>
+      <h1>Hochzeitsspiel 💍</h1>
+      <p>Gib zunächst deinen echten Namen und danach dein Spiel-Pseudonym ein.</p>
+
+      <form id="joinForm">
+        <label>
+          Echter Name
+          <input
+            id="realName"
+            maxlength="40"
+            autocomplete="name"
+            placeholder="z. B. Max Mustermann"
+            required
+          />
+        </label>
+
+        <label>
+          Pseudonym
+          <input
+            id="pseudonym"
+            maxlength="40"
+            autocomplete="off"
+            placeholder="z. B. Tanzbär"
+            required
+          />
+        </label>
+
+        <button type="submit">Spiel beitreten</button>
+        <p id="loginError" class="error"></p>
+      </form>
+    </section>
+
+    <section id="gameCard" class="card hidden">
+      <div class="top-row">
+        <span id="playerName" class="pill"></span>
+        <span id="progress" class="muted"></span>
+      </div>
+
+      <div id="lobbyView">
+        <h2>Du bist dabei 🎉</h2>
+        <p>Warte, bis die nächste Frage auf deinem Smartphone erscheint.</p>
+      </div>
+
+      <div id="questionView" class="hidden">
+        <p class="eyebrow">Deine Frage</p>
+        <h2 id="questionText"></h2>
+        <div id="options" class="options"></div>
+        <p id="answerStatus" class="muted"></p>
+      </div>
+
+      <div id="revealView" class="hidden">
+        <p class="eyebrow">Ergebnis</p>
+        <h2 id="revealQuestion"></h2>
+        <div id="resultBars"></div>
+        <p id="correctAnswer" class="success"></p>
+      </div>
+
+      <div id="finishedView" class="hidden">
+        <h2>Das war’s! 🥂</h2>
+        <p>Danke fürs Mitspielen.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/guest.js"></script>
+</body>
+</html>
