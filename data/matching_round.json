@@ -1,0 +1,12 @@
+[
+  { "id": 1, "text": "Der perfekte Urlaub: Meer oder Berge?", "options": ["Meer", "Berge"] },
+  { "id": 2, "text": "Samstagabend: Ausgehen oder gemütlich zuhause?", "options": ["Ausgehen", "Zuhause"] },
+  { "id": 3, "text": "Beim Essen: lieber süß oder herzhaft?", "options": ["Süß", "Herzhaft"] },
+  { "id": 4, "text": "Urlaub planen: alles vorher buchen oder spontan entscheiden?", "options": ["Durchplanen", "Spontan"] },
+  { "id": 5, "text": "Was ist wichtiger: Humor oder Romantik?", "options": ["Humor", "Romantik"] },
+  { "id": 6, "text": "Frühaufsteher oder Nachteule?", "options": ["Frühaufsteher", "Nachteule"] },
+  { "id": 7, "text": "Lieber Großstadt oder Landleben?", "options": ["Großstadt", "Land"] },
+  { "id": 8, "text": "Gemeinsame Freizeit: Sport oder Serienmarathon?", "options": ["Sport", "Serien"] },
+  { "id": 9, "text": "Bei Entscheidungen: Kopf oder Bauch?", "options": ["Kopf", "Bauch"] },
+  { "id": 10, "text": "Überraschungsparty oder lieber vorher Bescheid wissen?", "options": ["Überraschung", "Vorher wissen"] }
+]

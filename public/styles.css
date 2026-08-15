@@ -318,3 +318,206 @@ input {
     flex-direction: column;
   }
 }
+
+/* Love-is-Phina: Zwei-Runden-Hostansicht */
+.header-badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dashboard-grid {
+  grid-template-columns: 310px minmax(0, 1fr) 350px;
+  grid-template-areas:
+    "join stage participants"
+    "questions stage participants"
+    "pairs pairs pairs";
+}
+
+.pairs-card {
+  grid-area: pairs;
+}
+
+.match-button {
+  width: 100%;
+  margin-top: 16px;
+  min-height: 54px;
+}
+
+.question-item.completed {
+  border: 1px solid rgba(59, 155, 98, .35);
+}
+
+.question-item.active {
+  outline: 2px solid #8b6571;
+}
+
+.question-item:disabled {
+  cursor: default;
+}
+
+.pairs-board {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.pairs-board::before {
+  content: "";
+  position: absolute;
+  left: 30px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: #eadfe4;
+}
+
+.pair-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 48px minmax(150px, 1fr) 54px minmax(150px, 1fr) minmax(190px, auto);
+  gap: 12px;
+  align-items: center;
+  padding: 13px;
+  border: 1px solid #eadfe4;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.pair-row.winner {
+  border-width: 2px;
+  box-shadow: 0 10px 30px rgba(60, 42, 31, .10);
+}
+
+.pair-seed {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #29232d;
+  color: white;
+  font-weight: 900;
+}
+
+.person-node {
+  padding: 15px 16px;
+  border: 1px solid #ddd1d7;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
+  background: #fbf8f6;
+}
+
+.pair-connector {
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: #8b6571;
+  font-size: 22px;
+}
+
+.pair-connector::before,
+.pair-connector::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 2px;
+  background: #d8c5ce;
+}
+
+.pair-connector::before { left: 0; }
+.pair-connector::after { right: 0; }
+
+.pair-connector span {
+  position: relative;
+  z-index: 1;
+  background: white;
+  padding: 0 6px;
+}
+
+.pair-score {
+  justify-self: stretch;
+  padding: 12px 14px;
+  border-radius: 999px;
+  background: #efe7eb;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.unmatched-note {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f4efeb;
+}
+
+.winner-pair {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 18px;
+  margin-top: 14px;
+  border-radius: 18px;
+  background: #efe7eb;
+  font-size: 20px;
+}
+
+@media (max-width: 1050px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "stage stage"
+      "pairs pairs"
+      "join participants"
+      "questions questions";
+  }
+
+  .pair-row {
+    grid-template-columns: 42px 1fr 42px 1fr;
+  }
+
+  .pair-score {
+    grid-column: 2 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "stage"
+      "pairs"
+      "join"
+      "participants"
+      "questions";
+  }
+
+  .pair-row {
+    grid-template-columns: 36px 1fr;
+  }
+
+  .pair-seed {
+    grid-row: 1 / 4;
+  }
+
+  .pair-connector {
+    display: none;
+  }
+
+  .pair-score {
+    grid-column: 2;
+  }
+
+  .winner-pair {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hochzeitsspiel – Admin</title>
+  <title>Love-is-Phina – Host</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body class="admin-page">
   <main class="admin-layout">
     <section id="adminLogin" class="card admin-login">
       <p class="eyebrow">Spielleitung</p>
-      <h1>Admin-Ansicht</h1>
+      <h1>Love-is-Phina</h1>
       <form id="adminForm">
         <label>
           Admin-Schlüssel
           <input id="adminKeyInput" type="password" required />
         </label>
-        <button type="submit">Öffnen</button>
+        <button type="submit">Host-Ansicht öffnen</button>
         <p id="adminError" class="error"></p>
       </form>
     </section>
@@ -24,10 +24,13 @@
     <div id="dashboard" class="hidden">
       <header class="admin-header">
         <div>
-          <p class="eyebrow">Hochzeitsspiel</p>
-          <h1>Spielleitung</h1>
+          <p class="eyebrow">Love-is-Phina</p>
+          <h1 id="roundHeading">Findungsrunde</h1>
         </div>
-        <div id="connectionState" class="pill">verbunden</div>
+        <div class="header-badges">
+          <span id="phaseBadge" class="pill"></span>
+          <span id="connectionState" class="pill">verbunden</span>
+        </div>
       </header>
 
       <section class="dashboard-grid">
@@ -40,13 +43,14 @@
 
         <article class="card stage-card">
           <div class="top-row">
-            <span id="phaseBadge" class="pill"></span>
+            <span id="stageRound" class="pill"></span>
             <span id="answerCounter" class="muted"></span>
           </div>
 
           <div id="stageEmpty">
-            <h2>Bereit?</h2>
-            <p>Wähle unten eine Frage aus und starte sie.</p>
+            <p class="eyebrow">Bereit?</p>
+            <h2 id="emptyTitle">Die Findungsrunde kann beginnen.</h2>
+            <p id="emptyText">Wähle unten eine Frage aus und starte sie.</p>
           </div>
 
           <div id="stageQuestion" class="hidden">
@@ -57,19 +61,49 @@
 
             <div class="button-row">
               <button id="revealButton" type="button">Antworten aufdecken</button>
-              <button id="finishButton" type="button" class="secondary">Spiel beenden</button>
             </div>
+          </div>
+
+          <div id="matchingStage" class="hidden">
+            <p class="eyebrow">Matching abgeschlossen</p>
+            <h2>It’s a match! 💞</h2>
+            <p>Die anonymen Antworten aus der Findungsrunde wurden miteinander verglichen.</p>
+            <button id="startRound2Button" type="button">Pärchenrunde vorbereiten</button>
+          </div>
+
+          <div id="finalStage" class="hidden">
+            <p class="eyebrow">Finale</p>
+            <h2 id="winnerTitle">Gewinnerpaar</h2>
+            <div id="winnerContent"></div>
           </div>
         </article>
 
         <article class="card participants-card">
           <h2>Teilnehmende <span id="participantCount"></span></h2>
+          <p id="privacyHint" class="muted small">In der Findungsrunde bleiben die echten Namen verborgen.</p>
           <div id="participants"></div>
         </article>
 
         <article class="card questions-card">
-          <h2>Fragen</h2>
+          <div class="top-row">
+            <h2 id="questionListTitle">Fragen · Findungsrunde</h2>
+            <span id="questionProgress" class="muted small"></span>
+          </div>
           <div id="questionList"></div>
+          <button id="matchButton" class="match-button hidden" type="button">Matches bilden</button>
+          <button id="finishButton" class="match-button hidden" type="button">Finale auswerten</button>
+        </article>
+
+        <article id="pairsCard" class="card pairs-card hidden">
+          <div class="top-row">
+            <div>
+              <p class="eyebrow">Matching Board</p>
+              <h2>Die Pärchen</h2>
+            </div>
+            <span id="pairRoundStatus" class="pill"></span>
+          </div>
+          <div id="pairsBoard" class="pairs-board"></div>
+          <div id="unmatchedBox"></div>
         </article>
       </section>
     </div>

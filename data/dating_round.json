@@ -1,0 +1,12 @@
+[
+  { "id": 1, "text": "Euer gemeinsamer Sonntag: ausschlafen oder früh etwas unternehmen?", "options": ["Ausschlafen", "Früh los"] },
+  { "id": 2, "text": "Gemeinsame Reise: Roadtrip oder All-inclusive?", "options": ["Roadtrip", "All-inclusive"] },
+  { "id": 3, "text": "Wenn ihr euch nicht einig seid: diskutieren oder erstmal Abstand?", "options": ["Diskutieren", "Abstand"] },
+  { "id": 4, "text": "Date-Abend: schick essen oder zusammen kochen?", "options": ["Restaurant", "Zusammen kochen"] },
+  { "id": 5, "text": "Gemeinsames Zuhause: minimalistisch oder voller Erinnerungsstücke?", "options": ["Minimalistisch", "Erinnerungsstücke"] },
+  { "id": 6, "text": "Spontan 500 Euro übrig: Reise oder etwas Schönes für zuhause?", "options": ["Reise", "Für zuhause"] },
+  { "id": 7, "text": "Beim Spieleabend: Hauptsache Spaß oder unbedingt gewinnen?", "options": ["Spaß", "Gewinnen"] },
+  { "id": 8, "text": "Eine Woche frei: Abenteuer oder Erholung?", "options": ["Abenteuer", "Erholung"] },
+  { "id": 9, "text": "Bei einer Feier: bis zum Schluss bleiben oder lieber früher gehen?", "options": ["Bis zum Schluss", "Früher gehen"] },
+  { "id": 10, "text": "Was klingt besser: großer gemeinsamer Plan oder viele spontane kleine Momente?", "options": ["Großer Plan", "Spontane Momente"] }
+]

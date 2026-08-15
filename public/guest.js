@@ -8,6 +8,8 @@ const pseudonymInput = document.querySelector("#pseudonym");
 const loginError = document.querySelector("#loginError");
 const playerName = document.querySelector("#playerName");
 const progress = document.querySelector("#progress");
+const lobbyTitle = document.querySelector("#lobbyTitle");
+const lobbyText = document.querySelector("#lobbyText");
 
 const views = {
   lobby: document.querySelector("#lobbyView"),
@@ -46,16 +48,43 @@ function showView(name) {
   });
 }
 
+function renderLobby(state) {
+  showView("lobby");
+
+  if (state.phase === "matching") {
+    lobbyTitle.textContent = "Die Matches werden enthüllt 💞";
+    lobbyText.textContent = state.isUnmatched
+      ? "Für dich konnte diesmal leider kein Zweier-Match gebildet werden. Warte auf die Spielleitung."
+      : state.partner
+        ? `Dein Match ist ${state.partner.realName}. Gleich startet die Pärchenrunde.`
+        : "Die Spielleitung wertet gerade die Findungsrunde aus.";
+    return;
+  }
+
+  if (state.phase === "round2_ready") {
+    lobbyTitle.textContent = "Pärchenrunde 💍";
+    lobbyText.textContent = state.isUnmatched
+      ? "Du kannst die Pärchenrunde als Zuschauer verfolgen."
+      : state.partner
+        ? `Du spielst jetzt gemeinsam mit ${state.partner.realName}. Wartet auf die erste Frage.`
+        : "Warte auf die erste Frage der Pärchenrunde.";
+    return;
+  }
+
+  lobbyTitle.textContent = "Du bist dabei 🎉";
+  lobbyText.textContent = "Warte, bis die nächste Frage auf deinem Smartphone erscheint.";
+}
+
 function renderGame(state) {
   if (!state) return;
 
   progress.textContent =
     state.currentQuestionIndex === null
-      ? ""
-      : `Frage ${state.currentQuestionIndex + 1} / ${state.totalQuestions}`;
+      ? state.roundLabel
+      : `${state.roundLabel} · Frage ${state.currentQuestionIndex + 1} / ${state.totalQuestions}`;
 
-  if (state.phase === "lobby") {
-    showView("lobby");
+  if (["lobby", "matching", "round2_ready"].includes(state.phase)) {
+    renderLobby(state);
     return;
   }
 
@@ -73,6 +102,11 @@ function renderGame(state) {
 
     options.innerHTML = "";
 
+    if (state.isUnmatched && state.round === 2) {
+      status.textContent = "Du verfolgst diese Runde als Zuschauer.";
+      return;
+    }
+
     state.question.options.forEach((option, optionIndex) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -84,22 +118,18 @@ function renderGame(state) {
       }
 
       button.addEventListener("click", () => {
-        socket.emit(
-          "participant:answer",
-          { optionIndex },
-          (response) => {
-            if (!response.ok) {
-              status.textContent = response.error;
-              return;
-            }
-
-            [...options.children].forEach((child, index) => {
-              child.classList.toggle("selected", index === optionIndex);
-            });
-
-            status.textContent = "Antwort gespeichert ✓";
+        socket.emit("participant:answer", { optionIndex }, (response) => {
+          if (!response.ok) {
+            status.textContent = response.error;
+            return;
           }
-        );
+
+          [...options.children].forEach((child, index) => {
+            child.classList.toggle("selected", index === optionIndex);
+          });
+
+          status.textContent = "Antwort gespeichert ✓";
+        });
       });
 
       options.appendChild(button);
@@ -137,14 +167,10 @@ function renderGame(state) {
       })
       .join("");
 
-    const correct = document.querySelector("#correctAnswer");
-
-    correct.textContent =
-      state.correctOption === 0 || state.correctOption === 1
-        ? `Richtige Antwort: ${state.question.options[state.correctOption]}`
+    document.querySelector("#correctAnswer").textContent =
+      state.round === 2 && state.partner
+        ? `Dein Match: ${state.partner.realName}`
         : "";
-
-    return;
   }
 }
 
@@ -176,6 +202,7 @@ function joinGame(profile) {
       savedProfile = profile;
       localStorage.setItem("weddingQuizProfile", JSON.stringify(profile));
 
+      // Das Pseudonym bleibt bewusst in der Gäste-Kopfzeile stehen.
       playerName.textContent = response.participant.pseudonym;
       loginCard.classList.add("hidden");
       gameCard.classList.remove("hidden");
@@ -196,9 +223,7 @@ joinForm.addEventListener("submit", (event) => {
 });
 
 socket.on("connect", () => {
-  if (savedProfile) {
-    joinGame(savedProfile);
-  }
+  if (savedProfile) joinGame(savedProfile);
 });
 
 socket.on("game:update", renderGame);
