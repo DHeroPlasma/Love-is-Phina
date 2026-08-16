@@ -8,6 +8,7 @@ The game consists of two rounds:
 
 1. **Matching Round** – Guests play anonymously using pseudonyms.
 2. **Couples Round** – Guests are matched based on their answers and continue playing as couples using their real names.
+3. **Final** – The couple with the highest score in the couples round wins.
 
 ---
 
