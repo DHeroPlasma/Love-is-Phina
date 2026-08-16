@@ -6,6 +6,20 @@ const adminForm = document.querySelector("#adminForm");
 const adminKeyInput = document.querySelector("#adminKeyInput");
 const adminError = document.querySelector("#adminError");
 
+const hearts =
+  new HeartDecoration(
+    "heartBackground",
+    {
+      heartCount: 50,
+      minSize: 30,
+      maxSize: 100,
+      minOpacity: 0.15,
+      maxOpacity: 0.4
+    }
+  );
+
+hearts.create();
+
 let adminKey = sessionStorage.getItem("weddingQuizAdminKey") || "";
 let participants = [];
 let game = null;

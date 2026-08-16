@@ -1,21 +1,152 @@
 <!doctype html>
 <html lang="de">
+
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hochzeitsspiel</title>
-  <link rel="stylesheet" href="/styles.css" />
+
+  <!--
+    Makes sure the page scales correctly on smartphones
+    and other mobile devices.
+  -->
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  />
+
+  <title>Love-is-Phina</title>
+
+  <!--
+    Loads the main stylesheet used by the guest
+    and admin interfaces.
+  -->
+  <link
+    rel="stylesheet"
+    href="/styles.css"
+  />
 </head>
+
 <body class="guest-page">
+
+  <!--
+    ============================================================
+    DECORATIVE HEART ELEMENTS
+    ============================================================
+
+    These elements have no functionality inside the game.
+    They are only used for visual decoration.
+
+    The "heart-decoration" CSS class defines:
+    - position
+    - color
+    - animation
+    - general size
+
+    The additional "small" and "large" classes can be used
+    to create hearts of different sizes.
+
+    The individual positions are defined using inline styles.
+  -->
+
+  <div
+    class="heart-decoration large"
+    style="top: 7%; left: 6%;"
+  >
+    ♥
+  </div>
+
+  <div
+    class="heart-decoration small"
+    style="top: 18%; right: 8%;"
+  >
+    ♥
+  </div>
+
+  <div
+    class="heart-decoration"
+    style="bottom: 14%; left: 10%;"
+  >
+    ♥
+  </div>
+
+  <div
+    class="heart-decoration small"
+    style="bottom: 7%; right: 16%;"
+  >
+    ♥
+  </div>
+
+
+  <!--
+    ============================================================
+    MAIN GUEST CONTAINER
+    ============================================================
+
+    The container limits the width of the guest interface
+    and centers it on the screen.
+  -->
+
   <main class="container">
-    <section id="loginCard" class="card">
-      <p class="eyebrow">Willkommen</p>
-      <h1>Hochzeitsspiel 💍</h1>
-      <p>Gib zunächst deinen echten Namen und danach dein Spiel-Pseudonym ein.</p>
+
+
+    <!--
+      ==========================================================
+      LOGIN CARD
+      ==========================================================
+
+      This section is visible when a guest first opens the page.
+
+      The guest has to enter:
+      - their real name
+      - their pseudonym
+
+      After successfully joining the game, guest.js hides
+      this section and displays the game card instead.
+    -->
+
+    <section
+      id="loginCard"
+      class="card"
+    >
+
+      <p class="eyebrow">
+        Welcome to
+      </p>
+
+      <h1>
+        Love-is-Phina ♥
+      </h1>
+
+      <p>
+        Gib zunächst deinen echten Namen
+        und danach dein Spiel-Pseudonym ein.
+      </p>
+
+
+      <!--
+        JOIN FORM
+
+        This form is not submitted to the server using a
+        traditional HTTP form request.
+
+        Instead, guest.js listens for the "submit" event,
+        prevents the browser's default form submission,
+        and sends the data to the Node.js server using Socket.IO.
+      -->
 
       <form id="joinForm">
+
+
+        <!--
+          REAL NAME INPUT
+
+          The real name is stored by the server but should not
+          be displayed publicly during the anonymous first round.
+        -->
+
         <label>
+
           Echter Name
+
           <input
             id="realName"
             maxlength="40"
@@ -23,57 +154,346 @@
             placeholder="z. B. Max Mustermann"
             required
           />
+
         </label>
 
+
+        <!--
+          PSEUDONYM INPUT
+
+          The pseudonym is the public player name used during
+          the anonymous Matching Round.
+        -->
+
         <label>
+
           Pseudonym
+
           <input
             id="pseudonym"
             maxlength="40"
             autocomplete="off"
-            placeholder="z. B. Tanzbär"
+            placeholder="z. B. Love Doctor"
             required
           />
+
         </label>
 
-        <button type="submit">Spiel beitreten</button>
-        <p id="loginError" class="error"></p>
+
+        <!--
+          Submitting this button triggers the submit event
+          handled inside guest.js.
+        -->
+
+        <button type="submit">
+          Spiel beitreten ♥
+        </button>
+
+
+        <!--
+          guest.js uses this element to display possible
+          errors returned by the server.
+
+          Examples:
+          - missing name
+          - pseudonym already taken
+          - connection problems
+        -->
+
+        <p
+          id="loginError"
+          class="error"
+        ></p>
+
       </form>
+
     </section>
 
-    <section id="gameCard" class="card hidden">
+
+    <!--
+      ==========================================================
+      GAME CARD
+      ==========================================================
+
+      This is the main interface shown after the guest has
+      successfully joined the game.
+
+      The "hidden" class makes the card invisible initially.
+
+      guest.js removes the class after the participant
+      successfully joins the game.
+    -->
+
+    <section
+      id="gameCard"
+      class="card hidden"
+    >
+
+
+      <!--
+        ========================================================
+        GAME HEADER
+        ========================================================
+
+        Displays information that should remain visible while
+        the participant is playing.
+      -->
+
       <div class="top-row">
-        <span id="playerName" class="pill"></span>
-        <span id="progress" class="muted"></span>
+
+
+        <!--
+          The participant's pseudonym is inserted here
+          dynamically by guest.js.
+        -->
+
+        <span
+          id="playerName"
+          class="pill"
+        ></span>
+
+
+        <!--
+          Displays the current progress.
+
+          Example:
+
+          Frage 3 / 10
+        -->
+
+        <span
+          id="progress"
+          class="muted"
+        ></span>
+
       </div>
+
+
+
+      <!--
+        ========================================================
+        LOBBY VIEW
+        ========================================================
+
+        This view is displayed while the participant is waiting
+        for the host to start the next question.
+
+        guest.js switches between the different views depending
+        on the current game phase received from the server.
+      -->
 
       <div id="lobbyView">
-        <h2 id="lobbyTitle">Du bist dabei 🎉</h2>
-        <p id="lobbyText">Warte, bis die nächste Frage auf deinem Smartphone erscheint.</p>
+
+        <p class="eyebrow">
+          You are in ♥
+        </p>
+
+        <h2>
+          Du bist dabei!
+        </h2>
+
+        <p>
+          Warte, bis die nächste Frage
+          auf deinem Smartphone erscheint.
+        </p>
+
       </div>
 
-      <div id="questionView" class="hidden">
-        <p class="eyebrow">Deine Frage</p>
+
+
+      <!--
+        ========================================================
+        QUESTION VIEW
+        ========================================================
+
+        This section becomes visible when the host starts
+        a question.
+
+        The question itself and its answer options are provided
+        by the server through Socket.IO.
+      -->
+
+      <div
+        id="questionView"
+        class="hidden"
+      >
+
+        <p class="eyebrow">
+          Deine Frage
+        </p>
+
+
+        <!--
+          guest.js inserts the current question text here.
+        -->
+
         <h2 id="questionText"></h2>
-        <div id="options" class="options"></div>
-        <p id="answerStatus" class="muted"></p>
+
+
+        <!--
+          ANSWER OPTIONS
+
+          guest.js dynamically creates two answer buttons
+          and inserts them into this container.
+
+          For example:
+
+          [ Meer ]
+
+          [ Berge ]
+        -->
+
+        <div
+          id="options"
+          class="options"
+        ></div>
+
+
+        <!--
+          Displays feedback after the guest selects an answer.
+
+          Example:
+
+          "Antwort gespeichert ✓"
+        -->
+
+        <p
+          id="answerStatus"
+          class="muted"
+        ></p>
+
       </div>
 
-      <div id="revealView" class="hidden">
-        <p class="eyebrow">Ergebnis</p>
+
+
+      <!--
+        ========================================================
+        REVEAL VIEW
+        ========================================================
+
+        This view is displayed after the host reveals
+        the result of the current question.
+      -->
+
+      <div
+        id="revealView"
+        class="hidden"
+      >
+
+        <p class="eyebrow">
+          Ergebnis ♥
+        </p>
+
+
+        <!--
+          Displays the question again while showing
+          the results.
+        -->
+
         <h2 id="revealQuestion"></h2>
+
+
+        <!--
+          RESULT BARS
+
+          guest.js dynamically generates the result bars here.
+
+          They can visualize how many guests selected
+          each answer option.
+        -->
+
         <div id="resultBars"></div>
-        <p id="correctAnswer" class="success"></p>
+
+
+        <!--
+          This element can be used to display additional
+          information about the result.
+
+          Since the current game does not have objectively
+          correct or incorrect answers, it mainly acts
+          as an additional status/message field.
+        -->
+
+        <p
+          id="correctAnswer"
+          class="success"
+        ></p>
+
       </div>
 
-      <div id="finishedView" class="hidden">
-        <h2>Das war’s! 🥂</h2>
-        <p>Danke fürs Mitspielen.</p>
+
+
+      <!--
+        ========================================================
+        FINISHED VIEW
+        ========================================================
+
+        This section is displayed once the game has finished.
+      -->
+
+      <div
+        id="finishedView"
+        class="hidden"
+      >
+
+        <p class="eyebrow">
+          Love is in the air
+        </p>
+
+        <h2>
+          Das war’s! ♥
+        </h2>
+
+        <p>
+          Danke fürs Mitspielen.
+        </p>
+
       </div>
+
     </section>
+
   </main>
 
+
+  <!--
+    ============================================================
+    SOCKET.IO CLIENT
+    ============================================================
+
+    The Socket.IO server automatically provides this JavaScript
+    file when the Node.js server is running.
+
+    It gives the browser access to the global "io" function:
+
+        const socket = io();
+
+    This connection is used for real-time communication between
+    the guest's smartphone and the Node.js server.
+  -->
+
   <script src="/socket.io/socket.io.js"></script>
+
+
+  <!--
+    ============================================================
+    GUEST APPLICATION LOGIC
+    ============================================================
+
+    guest.js contains the client-side game logic.
+
+    Among other things, it handles:
+
+    - generating/restoring the clientId
+    - joining the game
+    - Socket.IO communication
+    - displaying questions
+    - sending answers
+    - displaying results
+    - switching between game phases
+  -->
+
   <script src="/guest.js"></script>
+
 </body>
+
 </html>

@@ -9,6 +9,7 @@ const path = require("path");
 
 const RecoveryService = require("./services/RecoveryService");
 
+// Current project filenames.
 const round1Questions = require("./data/matching_round.json");
 const round2Questions = require("./data/dating_round.json");
 
@@ -25,11 +26,9 @@ app.get("/admin", (_req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
-/*
-|--------------------------------------------------------------------------
-| Recovery
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* Recovery                                                                   */
+/* -------------------------------------------------------------------------- */
 
 const recovery = new RecoveryService({
   stateFile: path.join(__dirname, "data", "game-state.json"),
@@ -37,11 +36,9 @@ const recovery = new RecoveryService({
   tempFile: path.join(__dirname, "data", "game-state.tmp.json")
 });
 
-/*
-|--------------------------------------------------------------------------
-| Game State
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* Game state                                                                 */
+/* -------------------------------------------------------------------------- */
 
 const participants = new Map();
 
@@ -67,18 +64,24 @@ const game = {
   unmatchedClientId: null
 };
 
-/*
-|--------------------------------------------------------------------------
-| Helper
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* General helpers                                                            */
+/* -------------------------------------------------------------------------- */
 
 function getQuestionsForRound(round) {
-  return round === 2 ? round2Questions : round1Questions;
+  return round === 2
+    ? round2Questions
+    : round1Questions;
 }
 
 function getCurrentQuestions() {
   return getQuestionsForRound(game.round);
+}
+
+function getRoundLabel(round = game.round) {
+  return round === 2
+    ? "Pärchenrunde"
+    : "Findungsrunde";
 }
 
 function normalizeName(value, maxLength = 40) {
@@ -106,31 +109,91 @@ function getLanIp() {
   return "localhost";
 }
 
-function isPseudonymTaken(pseudonym, ownClientId = null) {
-  const normalized = pseudonym.toLocaleLowerCase("de-DE");
+function isPseudonymTaken(
+  pseudonym,
+  ownClientId = null
+) {
+  const normalized =
+    pseudonym.toLocaleLowerCase("de-DE");
 
   return [...participants.values()].some(
     (participant) =>
       participant.clientId !== ownClientId &&
-      participant.pseudonym.toLocaleLowerCase("de-DE") === normalized
+      participant.pseudonym.toLocaleLowerCase(
+        "de-DE"
+      ) === normalized
   );
 }
 
-function ensureAnswerSheet(round, clientId) {
-  const questionCount = getQuestionsForRound(round).length;
-  const answerMap = game.answers[round];
+function ensureAnswerSheet(
+  round,
+  clientId
+) {
+  const expectedLength =
+    getQuestionsForRound(round).length;
 
-  if (!answerMap.has(clientId)) {
+  const answerMap =
+    game.answers[round];
+
+  const existing =
+    answerMap.get(clientId);
+
+  if (
+    !Array.isArray(existing) ||
+    existing.length !== expectedLength
+  ) {
+    const normalized =
+      new Array(expectedLength).fill(null);
+
+    if (Array.isArray(existing)) {
+      for (
+        let index = 0;
+        index <
+        Math.min(
+          existing.length,
+          expectedLength
+        );
+        index++
+      ) {
+        if (
+          existing[index] === 0 ||
+          existing[index] === 1
+        ) {
+          normalized[index] =
+            existing[index];
+        }
+      }
+    }
+
     answerMap.set(
       clientId,
-      new Array(questionCount).fill(null)
+      normalized
     );
   }
 
   return answerMap.get(clientId);
 }
 
-function getParticipantPair(clientId) {
+function countAnswered(
+  round,
+  clientId
+) {
+  const sheet =
+    ensureAnswerSheet(
+      round,
+      clientId
+    );
+
+  return sheet.filter(
+    (answer) =>
+      answer === 0 ||
+      answer === 1
+  ).length;
+}
+
+function getParticipantPair(
+  clientId
+) {
   return game.pairs.find(
     (pair) =>
       pair.memberA === clientId ||
@@ -139,64 +202,103 @@ function getParticipantPair(clientId) {
 }
 
 function getPartner(clientId) {
-  const pair = getParticipantPair(clientId);
+  const pair =
+    getParticipantPair(clientId);
 
-  if (!pair) return null;
+  if (!pair) {
+    return null;
+  }
 
   const partnerId =
     pair.memberA === clientId
       ? pair.memberB
       : pair.memberA;
 
-  return participants.get(partnerId) || null;
+  return (
+    participants.get(partnerId) ||
+    null
+  );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Persistence Mapping
-|--------------------------------------------------------------------------
-|
-| RecoveryService selbst kennt keine Maps, Sets oder Spiellogik.
-| Deshalb wandeln wir hier den Zustand in normales JSON um.
-|--------------------------------------------------------------------------
-*/
+function isUnmatched(clientId) {
+  return Boolean(
+    game.unmatchedClientId &&
+    game.unmatchedClientId === clientId
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Persistence mapping                                                        */
+/* -------------------------------------------------------------------------- */
 
 function buildPersistentState() {
   return {
     version: 1,
 
-    participants: [...participants.values()].map((participant) => ({
-      clientId: participant.clientId,
-      realName: participant.realName,
-      pseudonym: participant.pseudonym
-    })),
+    participants:
+      [...participants.values()].map(
+        (participant) => ({
+          clientId:
+            participant.clientId,
+
+          realName:
+            participant.realName,
+
+          pseudonym:
+            participant.pseudonym
+        })
+      ),
 
     game: {
-      round: game.round,
-      phase: game.phase,
-      currentQuestionIndex: game.currentQuestionIndex,
+      round:
+        game.round,
+
+      phase:
+        game.phase,
+
+      currentQuestionIndex:
+        game.currentQuestionIndex,
 
       answers: {
-        1: Object.fromEntries(game.answers[1]),
-        2: Object.fromEntries(game.answers[2])
+        1: Object.fromEntries(
+          game.answers[1]
+        ),
+
+        2: Object.fromEntries(
+          game.answers[2]
+        )
       },
 
       completedQuestions: {
-        1: [...game.completedQuestions[1]],
-        2: [...game.completedQuestions[2]]
+        1: [
+          ...game.completedQuestions[1]
+        ],
+
+        2: [
+          ...game.completedQuestions[2]
+        ]
       },
 
-      pairs: game.pairs,
-      unmatchedClientId: game.unmatchedClientId
+      pairs:
+        game.pairs,
+
+      unmatchedClientId:
+        game.unmatchedClientId
     }
   };
 }
 
 function saveGameState(reason) {
-  recovery.save(buildPersistentState(), reason);
+  recovery.save(
+    buildPersistentState(),
+    reason
+  );
 }
 
-function isValidAnswerSheet(value, expectedLength) {
+function isValidAnswerSheet(
+  value,
+  expectedLength
+) {
   return (
     Array.isArray(value) &&
     value.length === expectedLength &&
@@ -209,24 +311,68 @@ function isValidAnswerSheet(value, expectedLength) {
   );
 }
 
-function restoreGameState(savedState) {
+function normalizeRecoveredPair(
+  pair,
+  index
+) {
+  if (
+    !pair ||
+    !participants.has(pair.memberA) ||
+    !participants.has(pair.memberB)
+  ) {
+    return null;
+  }
+
+  return {
+    id:
+      pair.id ||
+      `pair-${index + 1}`,
+
+    memberA:
+      pair.memberA,
+
+    memberB:
+      pair.memberB,
+
+    round1Agreement:
+      Number.isInteger(
+        pair.round1Agreement
+      )
+        ? pair.round1Agreement
+        : Number.isInteger(
+              pair.round1Matches
+            )
+          ? pair.round1Matches
+          : 0,
+
+    round1Compared:
+      Number.isInteger(
+        pair.round1Compared
+      )
+        ? pair.round1Compared
+        : 0
+  };
+}
+
+function restoreGameState(
+  savedState
+) {
   if (
     !savedState ||
     savedState.version !== 1 ||
     !savedState.game
   ) {
-    throw new Error("Ungültiger Recovery-Spielstand.");
+    throw new Error(
+      "Ungültiger Recovery-Spielstand."
+    );
   }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Teilnehmer
-  |--------------------------------------------------------------------------
-  */
 
   participants.clear();
 
-  for (const savedParticipant of savedState.participants || []) {
+  for (
+    const savedParticipant
+    of savedState.participants || []
+  ) {
     if (
       !savedParticipant.clientId ||
       !savedParticipant.realName ||
@@ -235,155 +381,182 @@ function restoreGameState(savedState) {
       continue;
     }
 
-    participants.set(savedParticipant.clientId, {
-      clientId: savedParticipant.clientId,
-      realName: savedParticipant.realName,
-      pseudonym: savedParticipant.pseudonym,
+    participants.set(
+      savedParticipant.clientId,
+      {
+        clientId:
+          savedParticipant.clientId,
 
-      // Nach Server-Neustart zunächst offline.
-      socketId: null,
-      connected: false
-    });
+        realName:
+          savedParticipant.realName,
+
+        pseudonym:
+          savedParticipant.pseudonym,
+
+        socketId: null,
+        connected: false
+      }
+    );
   }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Grundzustand
-  |--------------------------------------------------------------------------
-  */
 
   game.round =
     savedState.game.round === 2
       ? 2
       : 1;
 
-  const validPhases = new Set([
-    "lobby",
-    "question",
-    "reveal",
-    "matching",
-    "round2_ready",
-    "finished"
-  ]);
+  const validPhases =
+    new Set([
+      "lobby",
+      "question",
+      "reveal",
+      "matching",
+      "round2_ready",
+      "finished"
+    ]);
 
-  game.phase = validPhases.has(savedState.game.phase)
-    ? savedState.game.phase
-    : "lobby";
+  game.phase =
+    validPhases.has(
+      savedState.game.phase
+    )
+      ? savedState.game.phase
+      : "lobby";
 
-  const questions = getQuestionsForRound(game.round);
+  const currentQuestions =
+    getQuestionsForRound(
+      game.round
+    );
 
   game.currentQuestionIndex =
-    Number.isInteger(savedState.game.currentQuestionIndex) &&
-    savedState.game.currentQuestionIndex >= 0 &&
-    savedState.game.currentQuestionIndex < questions.length
-      ? savedState.game.currentQuestionIndex
+    Number.isInteger(
+      savedState.game
+        .currentQuestionIndex
+    ) &&
+    savedState.game
+      .currentQuestionIndex >= 0 &&
+    savedState.game
+      .currentQuestionIndex <
+      currentQuestions.length
+      ? savedState.game
+          .currentQuestionIndex
       : null;
-
-  /*
-  |--------------------------------------------------------------------------
-  | Antworten
-  |--------------------------------------------------------------------------
-  */
 
   game.answers[1].clear();
   game.answers[2].clear();
 
-  for (const round of [1, 2]) {
+  for (
+    const round
+    of [1, 2]
+  ) {
     const sourceAnswers =
-      savedState.game.answers?.[round] || {};
+      savedState.game
+        .answers?.[round] || {};
 
     const expectedLength =
-      getQuestionsForRound(round).length;
+      getQuestionsForRound(
+        round
+      ).length;
 
-    for (const clientId of participants.keys()) {
+    for (
+      const clientId
+      of participants.keys()
+    ) {
       const storedSheet =
-        sourceAnswers[clientId];
+        sourceAnswers[
+          clientId
+        ];
 
-      const sheet = isValidAnswerSheet(
-        storedSheet,
-        expectedLength
-      )
-        ? [...storedSheet]
-        : new Array(expectedLength).fill(null);
+      game.answers[
+        round
+      ].set(
+        clientId,
 
-      game.answers[round].set(clientId, sheet);
+        isValidAnswerSheet(
+          storedSheet,
+          expectedLength
+        )
+          ? [...storedSheet]
+          : new Array(
+              expectedLength
+            ).fill(null)
+      );
     }
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Abgeschlossene Fragen
-  |--------------------------------------------------------------------------
-  */
-
   const completedRound1 =
     Array.isArray(
-      savedState.game.completedQuestions?.[1]
+      savedState.game
+        .completedQuestions?.[1]
     )
-      ? savedState.game.completedQuestions[1]
+      ? savedState.game
+          .completedQuestions[1]
       : [];
 
   const completedRound2 =
     Array.isArray(
-      savedState.game.completedQuestions?.[2]
+      savedState.game
+        .completedQuestions?.[2]
     )
-      ? savedState.game.completedQuestions[2]
+      ? savedState.game
+          .completedQuestions[2]
       : [];
 
-  game.completedQuestions[1] = new Set(
-    completedRound1.filter(
-      (index) =>
-        Number.isInteger(index) &&
-        index >= 0 &&
-        index < round1Questions.length
-    )
-  );
+  game.completedQuestions[1] =
+    new Set(
+      completedRound1.filter(
+        (index) =>
+          Number.isInteger(index) &&
+          index >= 0 &&
+          index <
+            round1Questions.length
+      )
+    );
 
-  game.completedQuestions[2] = new Set(
-    completedRound2.filter(
-      (index) =>
-        Number.isInteger(index) &&
-        index >= 0 &&
-        index < round2Questions.length
-    )
-  );
-
-  /*
-  |--------------------------------------------------------------------------
-  | Matches
-  |--------------------------------------------------------------------------
-  */
+  game.completedQuestions[2] =
+    new Set(
+      completedRound2.filter(
+        (index) =>
+          Number.isInteger(index) &&
+          index >= 0 &&
+          index <
+            round2Questions.length
+      )
+    );
 
   game.pairs =
-    Array.isArray(savedState.game.pairs)
-      ? savedState.game.pairs.filter(
-          (pair) =>
-            pair &&
-            participants.has(pair.memberA) &&
-            participants.has(pair.memberB)
-        )
+    Array.isArray(
+      savedState.game.pairs
+    )
+      ? savedState.game.pairs
+          .map(
+            normalizeRecoveredPair
+          )
+          .filter(Boolean)
       : [];
 
   game.unmatchedClientId =
-    savedState.game.unmatchedClientId &&
+    savedState.game
+      .unmatchedClientId &&
     participants.has(
-      savedState.game.unmatchedClientId
+      savedState.game
+        .unmatchedClientId
     )
-      ? savedState.game.unmatchedClientId
+      ? savedState.game
+          .unmatchedClientId
       : null;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Recovery beim Start
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* Load recovery                                                              */
+/* -------------------------------------------------------------------------- */
 
 try {
-  const savedState = recovery.load();
+  const savedState =
+    recovery.load();
 
   if (savedState) {
-    restoreGameState(savedState);
+    restoreGameState(
+      savedState
+    );
 
     console.log(
       `[Recovery] ${participants.size} Teilnehmer wiederhergestellt.`
@@ -396,42 +569,59 @@ try {
   );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Matching
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* Matching                                                                   */
+/* -------------------------------------------------------------------------- */
 
-function calculateCompatibility(clientIdA, clientIdB) {
+function calculateCompatibility(
+  clientIdA,
+  clientIdB
+) {
   const answersA =
-    game.answers[1].get(clientIdA) || [];
+    ensureAnswerSheet(
+      1,
+      clientIdA
+    );
 
   const answersB =
-    game.answers[1].get(clientIdB) || [];
+    ensureAnswerSheet(
+      1,
+      clientIdB
+    );
 
   let matches = 0;
   let compared = 0;
 
   for (
     let index = 0;
-    index < round1Questions.length;
+    index <
+    round1Questions.length;
     index++
   ) {
-    const answerA = answersA[index];
-    const answerB = answersB[index];
+    const answerA =
+      answersA[index];
+
+    const answerB =
+      answersB[index];
 
     if (
-      answerA === null ||
-      answerA === undefined ||
-      answerB === null ||
-      answerB === undefined
+      (
+        answerA !== 0 &&
+        answerA !== 1
+      ) ||
+      (
+        answerB !== 0 &&
+        answerB !== 1
+      )
     ) {
       continue;
     }
 
     compared++;
 
-    if (answerA === answerB) {
+    if (
+      answerA === answerB
+    ) {
       matches++;
     }
   }
@@ -443,22 +633,29 @@ function calculateCompatibility(clientIdA, clientIdB) {
 }
 
 function createMatches() {
-  const clientIds = [...participants.keys()];
+  const clientIds =
+    [...participants.keys()];
 
   const combinations = [];
 
   for (
     let firstIndex = 0;
-    firstIndex < clientIds.length;
+    firstIndex <
+    clientIds.length;
     firstIndex++
   ) {
     for (
-      let secondIndex = firstIndex + 1;
-      secondIndex < clientIds.length;
+      let secondIndex =
+        firstIndex + 1;
+      secondIndex <
+      clientIds.length;
       secondIndex++
     ) {
-      const memberA = clientIds[firstIndex];
-      const memberB = clientIds[secondIndex];
+      const memberA =
+        clientIds[firstIndex];
+
+      const memberB =
+        clientIds[secondIndex];
 
       const compatibility =
         calculateCompatibility(
@@ -469,100 +666,161 @@ function createMatches() {
       combinations.push({
         memberA,
         memberB,
-        matchingScore: compatibility.matches,
-        comparedAnswers: compatibility.compared
+
+        matchingScore:
+          compatibility.matches,
+
+        comparedAnswers:
+          compatibility.compared
       });
     }
   }
 
-  combinations.sort((a, b) => {
-    if (b.matchingScore !== a.matchingScore) {
-      return b.matchingScore - a.matchingScore;
+  combinations.sort(
+    (a, b) => {
+      if (
+        b.matchingScore !==
+        a.matchingScore
+      ) {
+        return (
+          b.matchingScore -
+          a.matchingScore
+        );
+      }
+
+      if (
+        b.comparedAnswers !==
+        a.comparedAnswers
+      ) {
+        return (
+          b.comparedAnswers -
+          a.comparedAnswers
+        );
+      }
+
+      return `${a.memberA}:${a.memberB}`
+        .localeCompare(
+          `${b.memberA}:${b.memberB}`
+        );
     }
+  );
 
-    return (
-      b.comparedAnswers -
-      a.comparedAnswers
-    );
-  });
+  const alreadyMatched =
+    new Set();
 
-  const alreadyMatched = new Set();
   const pairs = [];
 
-  for (const combination of combinations) {
+  for (
+    const combination
+    of combinations
+  ) {
     if (
-      alreadyMatched.has(combination.memberA) ||
-      alreadyMatched.has(combination.memberB)
+      alreadyMatched.has(
+        combination.memberA
+      ) ||
+      alreadyMatched.has(
+        combination.memberB
+      )
     ) {
       continue;
     }
 
     pairs.push({
-      memberA: combination.memberA,
-      memberB: combination.memberB,
-      round1Matches:
+      id:
+        `pair-${pairs.length + 1}`,
+
+      memberA:
+        combination.memberA,
+
+      memberB:
+        combination.memberB,
+
+      round1Agreement:
         combination.matchingScore,
+
       round1Compared:
         combination.comparedAnswers
     });
 
-    alreadyMatched.add(combination.memberA);
-    alreadyMatched.add(combination.memberB);
+    alreadyMatched.add(
+      combination.memberA
+    );
+
+    alreadyMatched.add(
+      combination.memberB
+    );
   }
 
-  const unmatchedClientId =
+  game.pairs = pairs;
+
+  game.unmatchedClientId =
     clientIds.find(
       (clientId) =>
-        !alreadyMatched.has(clientId)
+        !alreadyMatched.has(
+          clientId
+        )
     ) || null;
-
-  game.pairs = pairs;
-  game.unmatchedClientId =
-    unmatchedClientId;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Round 2 Pair Scores
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* Pair scoring                                                               */
+/* -------------------------------------------------------------------------- */
 
-function calculatePairRound2Score(pair) {
+function calculatePairRound2Score(
+  pair
+) {
   const answersA =
-    game.answers[2].get(pair.memberA) || [];
+    ensureAnswerSheet(
+      2,
+      pair.memberA
+    );
 
   const answersB =
-    game.answers[2].get(pair.memberB) || [];
+    ensureAnswerSheet(
+      2,
+      pair.memberB
+    );
 
   let matches = 0;
   let compared = 0;
 
   for (
     let index = 0;
-    index < round2Questions.length;
+    index <
+    round2Questions.length;
     index++
   ) {
     if (
-      !game.completedQuestions[2].has(index)
+      !game.completedQuestions[2]
+        .has(index)
     ) {
       continue;
     }
 
-    const answerA = answersA[index];
-    const answerB = answersB[index];
+    const answerA =
+      answersA[index];
+
+    const answerB =
+      answersB[index];
 
     if (
-      answerA === null ||
-      answerA === undefined ||
-      answerB === null ||
-      answerB === undefined
+      (
+        answerA !== 0 &&
+        answerA !== 1
+      ) ||
+      (
+        answerB !== 0 &&
+        answerB !== 1
+      )
     ) {
       continue;
     }
 
     compared++;
 
-    if (answerA === answerB) {
+    if (
+      answerA === answerB
+    ) {
       matches++;
     }
   }
@@ -574,96 +832,181 @@ function calculatePairRound2Score(pair) {
 }
 
 function getPairResults() {
-  return game.pairs
-    .map((pair) => {
-      const memberA =
-        participants.get(pair.memberA);
+  const results =
+    game.pairs.map(
+      (pair, index) => {
+        const memberA =
+          participants.get(
+            pair.memberA
+          );
 
-      const memberB =
-        participants.get(pair.memberB);
+        const memberB =
+          participants.get(
+            pair.memberB
+          );
 
-      const round2 =
-        calculatePairRound2Score(pair);
+        const round2 =
+          calculatePairRound2Score(
+            pair
+          );
 
-      return {
-        memberA: {
-          clientId: pair.memberA,
-          realName:
-            memberA?.realName || "Unbekannt",
-          pseudonym:
-            memberA?.pseudonym || "?"
-        },
+        return {
+          id:
+            pair.id ||
+            `pair-${index + 1}`,
 
-        memberB: {
-          clientId: pair.memberB,
-          realName:
-            memberB?.realName || "Unbekannt",
-          pseudonym:
-            memberB?.pseudonym || "?"
-        },
+          memberA: {
+            clientId:
+              pair.memberA,
 
-        round1Matches:
-          pair.round1Matches,
+            realName:
+              memberA?.realName ||
+              "Unbekannt",
 
-        round1Compared:
-          pair.round1Compared,
+            pseudonym:
+              memberA?.pseudonym ||
+              "?"
+          },
 
-        round2Matches:
-          round2.matches,
+          memberB: {
+            clientId:
+              pair.memberB,
 
-        round2Compared:
-          round2.compared
-      };
-    })
-    .sort((a, b) => {
+            realName:
+              memberB?.realName ||
+              "Unbekannt",
+
+            pseudonym:
+              memberB?.pseudonym ||
+              "?"
+          },
+
+          round1Agreement:
+            Number.isInteger(
+              pair.round1Agreement
+            )
+              ? pair.round1Agreement
+              : Number.isInteger(
+                    pair.round1Matches
+                  )
+                ? pair.round1Matches
+                : 0,
+
+          round1Compared:
+            Number.isInteger(
+              pair.round1Compared
+            )
+              ? pair.round1Compared
+              : 0,
+
+          round2Agreement:
+            round2.matches,
+
+          round2Compared:
+            round2.compared
+        };
+      }
+    );
+
+  return results.sort(
+    (a, b) => {
       if (
-        b.round2Matches !==
-        a.round2Matches
+        game.round === 2 ||
+        game.phase === "finished"
       ) {
-        return (
-          b.round2Matches -
-          a.round2Matches
-        );
+        if (
+          b.round2Agreement !==
+          a.round2Agreement
+        ) {
+          return (
+            b.round2Agreement -
+            a.round2Agreement
+          );
+        }
+
+        if (
+          b.round2Compared !==
+          a.round2Compared
+        ) {
+          return (
+            b.round2Compared -
+            a.round2Compared
+          );
+        }
+      } else {
+        if (
+          b.round1Agreement !==
+          a.round1Agreement
+        ) {
+          return (
+            b.round1Agreement -
+            a.round1Agreement
+          );
+        }
+
+        if (
+          b.round1Compared !==
+          a.round1Compared
+        ) {
+          return (
+            b.round1Compared -
+            a.round1Compared
+          );
+        }
       }
 
-      return (
-        b.round2Compared -
-        a.round2Compared
+      return a.id.localeCompare(
+        b.id
       );
-    });
+    }
+  );
 }
 
 function getWinners() {
-  const results = getPairResults();
+  const results =
+    getPairResults();
 
-  if (results.length === 0) {
+  if (
+    results.length === 0
+  ) {
     return [];
   }
 
   const highestScore =
-    results[0].round2Matches;
+    Math.max(
+      ...results.map(
+        (pair) =>
+          pair.round2Agreement
+      )
+    );
 
   return results.filter(
     (pair) =>
-      pair.round2Matches ===
+      pair.round2Agreement ===
       highestScore
   );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Public State
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* Public state                                                               */
+/* -------------------------------------------------------------------------- */
+
+function shouldRevealRealNames() {
+  return (
+    game.round === 2 ||
+    game.phase === "matching" ||
+    game.phase === "round2_ready" ||
+    game.phase === "finished"
+  );
+}
 
 function publicParticipantsForAdmin() {
   const revealRealNames =
-    game.phase === "matching" ||
-    game.phase === "round2_ready" ||
-    game.round === 2 ||
-    game.phase === "finished";
+    shouldRevealRealNames();
 
-  return [...participants.values()].map(
+  return [
+    ...participants.values()
+  ].map(
     (participant) => ({
       clientId:
         participant.clientId,
@@ -671,19 +1014,38 @@ function publicParticipantsForAdmin() {
       pseudonym:
         participant.pseudonym,
 
-      realName: revealRealNames
-        ? participant.realName
-        : null,
+      realName:
+        revealRealNames
+          ? participant.realName
+          : null,
+
+      displayName:
+        revealRealNames
+          ? participant.realName
+          : participant.pseudonym,
 
       connected:
-        participant.connected
+        participant.connected,
+
+      round1Answered:
+        countAnswered(
+          1,
+          participant.clientId
+        ),
+
+      round2Answered:
+        countAnswered(
+          2,
+          participant.clientId
+        )
     })
   );
 }
 
 function getCurrentQuestionForGuest() {
   if (
-    game.currentQuestionIndex === null
+    game.currentQuestionIndex ===
+    null
   ) {
     return null;
   }
@@ -698,30 +1060,53 @@ function getCurrentQuestionForGuest() {
   }
 
   return {
-    id: question.id,
-    text: question.text,
-    options: question.options
+    id:
+      question.id,
+
+    text:
+      question.text,
+
+    options:
+      question.options
   };
 }
 
 function getCurrentAnswerCounts() {
-  const counts = [0, 0];
+  const counts =
+    [0, 0];
 
   if (
-    game.currentQuestionIndex === null
+    game.currentQuestionIndex ===
+    null
   ) {
     return counts;
   }
 
-  for (const answerSheet of game.answers[
-    game.round
-  ].values()) {
+  for (
+    const [
+      clientId,
+      answerSheet
+    ]
+    of game.answers[
+      game.round
+    ].entries()
+  ) {
+    if (
+      game.round === 2 &&
+      isUnmatched(clientId)
+    ) {
+      continue;
+    }
+
     const answer =
       answerSheet[
         game.currentQuestionIndex
       ];
 
-    if (answer === 0 || answer === 1) {
+    if (
+      answer === 0 ||
+      answer === 1
+    ) {
       counts[answer]++;
     }
   }
@@ -729,15 +1114,46 @@ function getCurrentAnswerCounts() {
   return counts;
 }
 
-function gameStateForGuest(clientId) {
+function getUnmatchedPublic() {
+  if (
+    !game.unmatchedClientId
+  ) {
+    return null;
+  }
+
+  const participant =
+    participants.get(
+      game.unmatchedClientId
+    );
+
+  if (!participant) {
+    return null;
+  }
+
+  return {
+    clientId:
+      participant.clientId,
+
+    realName:
+      participant.realName,
+
+    pseudonym:
+      participant.pseudonym
+  };
+}
+
+function gameStateForGuest(
+  clientId
+) {
   const answerSheet =
-    game.answers[game.round].get(
+    ensureAnswerSheet(
+      game.round,
       clientId
     );
 
   const ownAnswer =
-    game.currentQuestionIndex !== null &&
-    answerSheet
+    game.currentQuestionIndex !==
+    null
       ? answerSheet[
           game.currentQuestionIndex
         ]
@@ -747,8 +1163,14 @@ function gameStateForGuest(clientId) {
     getPartner(clientId);
 
   return {
-    round: game.round,
-    phase: game.phase,
+    round:
+      game.round,
+
+    roundLabel:
+      getRoundLabel(),
+
+    phase:
+      game.phase,
 
     currentQuestionIndex:
       game.currentQuestionIndex,
@@ -774,7 +1196,8 @@ function gameStateForGuest(clientId) {
     ],
 
     partner:
-      game.round === 2 && partner
+      partner &&
+      shouldRevealRealNames()
         ? {
             realName:
               partner.realName
@@ -783,8 +1206,13 @@ function gameStateForGuest(clientId) {
 
     isMatched:
       Boolean(
-        getParticipantPair(clientId)
+        getParticipantPair(
+          clientId
+        )
       ),
+
+    isUnmatched:
+      isUnmatched(clientId),
 
     finished:
       game.phase === "finished"
@@ -792,34 +1220,47 @@ function gameStateForGuest(clientId) {
 }
 
 function gameStateForAdmin() {
+  const currentQuestions =
+    getCurrentQuestions();
+
   const question =
-    game.currentQuestionIndex !== null
-      ? getCurrentQuestions()[
+    game.currentQuestionIndex !==
+    null
+      ? currentQuestions[
           game.currentQuestionIndex
-        ]
+        ] || null
       : null;
 
+  const answerCounts =
+    getCurrentAnswerCounts();
+
   return {
-    round: game.round,
-    phase: game.phase,
+    round:
+      game.round,
+
+    roundLabel:
+      getRoundLabel(),
+
+    phase:
+      game.phase,
 
     currentQuestionIndex:
       game.currentQuestionIndex,
 
     totalQuestions:
-      getCurrentQuestions().length,
+      currentQuestions.length,
 
     questions:
-      getCurrentQuestions(),
+      currentQuestions,
 
     question,
 
-    answerCounts:
-      getCurrentAnswerCounts(),
+    answerCounts,
 
     answerTotal:
-      getCurrentAnswerCounts().reduce(
-        (sum, value) => sum + value,
+      answerCounts.reduce(
+        (sum, value) =>
+          sum + value,
         0
       ),
 
@@ -829,11 +1270,24 @@ function gameStateForAdmin() {
       ]
     ],
 
+    round1Complete:
+      game.completedQuestions[1]
+        .size ===
+      round1Questions.length,
+
+    round2Complete:
+      game.completedQuestions[2]
+        .size ===
+      round2Questions.length,
+
     participants:
       publicParticipantsForAdmin(),
 
     pairs:
       getPairResults(),
+
+    unmatched:
+      getUnmatchedPublic(),
 
     unmatchedClientId:
       game.unmatchedClientId,
@@ -845,11 +1299,9 @@ function gameStateForAdmin() {
   };
 }
 
-/*
-|--------------------------------------------------------------------------
-| Emit
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* Emit helpers                                                               */
+/* -------------------------------------------------------------------------- */
 
 function emitParticipantLists() {
   io.to("admin").emit(
@@ -865,25 +1317,30 @@ function emitGameStateToAll() {
   );
 
   for (
-    const [clientId, participant]
+    const [
+      clientId,
+      participant
+    ]
     of participants.entries()
   ) {
-    if (!participant.socketId) {
-      continue;
+    if (
+      participant.socketId
+    ) {
+      io.to(
+        participant.socketId
+      ).emit(
+        "game:update",
+        gameStateForGuest(
+          clientId
+        )
+      );
     }
-
-    io.to(participant.socketId).emit(
-      "game:update",
-      gameStateForGuest(clientId)
-    );
   }
 }
 
-/*
-|--------------------------------------------------------------------------
-| QR / Join Info
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* QR / join info                                                             */
+/* -------------------------------------------------------------------------- */
 
 app.get(
   "/api/join-info",
@@ -919,580 +1376,688 @@ app.get(
   }
 );
 
-/*
-|--------------------------------------------------------------------------
-| Socket.IO
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* Socket.IO                                                                  */
+/* -------------------------------------------------------------------------- */
 
-io.on("connection", (socket) => {
-  /*
-  |--------------------------------------------------------------------------
-  | Admin
-  |--------------------------------------------------------------------------
-  */
+io.on(
+  "connection",
+  (socket) => {
 
-  socket.on(
-    "admin:join",
-    (
-      { key } = {},
-      callback = () => {}
-    ) => {
-      if (key !== ADMIN_KEY) {
+    /* ---------------------------------------------------------------------- */
+    /* Admin login                                                            */
+    /* ---------------------------------------------------------------------- */
+
+    socket.on(
+      "admin:join",
+      (
+        { key } = {},
+        callback = () => {}
+      ) => {
+        if (
+          key !== ADMIN_KEY
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Falscher Admin-Schlüssel."
+          });
+
+          return;
+        }
+
+        socket.join(
+          "admin"
+        );
+
+        socket.data.isAdmin =
+          true;
+
         callback({
-          ok: false,
-          error:
-            "Falscher Admin-Schlüssel."
+          ok: true,
+
+          game:
+            gameStateForAdmin(),
+
+          participants:
+            publicParticipantsForAdmin()
         });
-
-        return;
       }
+    );
 
-      socket.join("admin");
-      socket.data.isAdmin = true;
+    /* ---------------------------------------------------------------------- */
+    /* Participant join / reconnect                                           */
+    /* ---------------------------------------------------------------------- */
 
-      callback({
-        ok: true,
-        game: gameStateForAdmin(),
-        participants:
-          publicParticipantsForAdmin()
-      });
-    }
-  );
-
-  /*
-  |--------------------------------------------------------------------------
-  | Teilnehmer beitreten / wiederverbinden
-  |--------------------------------------------------------------------------
-  */
-
-  socket.on(
-    "participant:join",
-    (
-      {
-        clientId,
-        realName,
-        pseudonym
-      } = {},
-      callback = () => {}
-    ) => {
-      clientId =
-        normalizeName(clientId, 80);
-
-      realName =
-        normalizeName(realName);
-
-      pseudonym =
-        normalizeName(pseudonym);
-
-      if (
-        !clientId ||
-        !realName ||
-        !pseudonym
-      ) {
-        callback({
-          ok: false,
-          error:
-            "Bitte echten Namen und Pseudonym vollständig eingeben."
-        });
-
-        return;
-      }
-
-      if (
-        isPseudonymTaken(
-          pseudonym,
-          clientId
-        )
-      ) {
-        callback({
-          ok: false,
-          error:
-            "Dieses Pseudonym ist bereits vergeben."
-        });
-
-        return;
-      }
-
-      const existing =
-        participants.get(clientId);
-
-      participants.set(clientId, {
-        clientId,
-        realName,
-        pseudonym,
-        socketId: socket.id,
-        connected: true
-      });
-
-      socket.data.clientId =
-        clientId;
-
-      ensureAnswerSheet(
-        1,
-        clientId
-      );
-
-      ensureAnswerSheet(
-        2,
-        clientId
-      );
-
-      saveGameState(
-        existing
-          ? "Teilnehmer wiederverbunden"
-          : "Teilnehmer beigetreten"
-      );
-
-      callback({
-        ok: true,
-
-        participant: {
+    socket.on(
+      "participant:join",
+      (
+        {
           clientId,
-          pseudonym,
-          realName
-        },
+          realName,
+          pseudonym
+        } = {},
+        callback = () => {}
+      ) => {
+        clientId =
+          normalizeName(
+            clientId,
+            80
+          );
 
-        game:
-          gameStateForGuest(clientId)
-      });
+        realName =
+          normalizeName(
+            realName
+          );
 
-      emitParticipantLists();
-      emitGameStateToAll();
-    }
-  );
+        pseudonym =
+          normalizeName(
+            pseudonym
+          );
 
-  /*
-  |--------------------------------------------------------------------------
-  | Antwort
-  |--------------------------------------------------------------------------
-  */
+        if (
+          !clientId ||
+          !realName ||
+          !pseudonym
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Bitte echten Namen und Pseudonym vollständig eingeben."
+          });
 
-  socket.on(
-    "participant:answer",
-    (
-      { optionIndex } = {},
-      callback = () => {}
-    ) => {
-      const clientId =
-        socket.data.clientId;
+          return;
+        }
 
-      if (
-        !clientId ||
-        !participants.has(clientId)
-      ) {
-        callback({
-          ok: false,
-          error:
-            "Du bist nicht angemeldet."
-        });
+        if (
+          isPseudonymTaken(
+            pseudonym,
+            clientId
+          )
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Dieses Pseudonym ist bereits vergeben."
+          });
 
-        return;
-      }
+          return;
+        }
 
-      if (
-        game.phase !== "question" ||
-        game.currentQuestionIndex === null
-      ) {
-        callback({
-          ok: false,
-          error:
-            "Aktuell kann nicht abgestimmt werden."
-        });
+        const existing =
+          participants.get(
+            clientId
+          );
 
-        return;
-      }
+        participants.set(
+          clientId,
+          {
+            clientId,
+            realName,
+            pseudonym,
+            socketId:
+              socket.id,
+            connected:
+              true
+          }
+        );
 
-      if (
-        optionIndex !== 0 &&
-        optionIndex !== 1
-      ) {
-        callback({
-          ok: false,
-          error:
-            "Ungültige Antwort."
-        });
+        socket.data.clientId =
+          clientId;
 
-        return;
-      }
-
-      const answerSheet =
         ensureAnswerSheet(
-          game.round,
+          1,
           clientId
         );
 
-      answerSheet[
-        game.currentQuestionIndex
-      ] = optionIndex;
+        ensureAnswerSheet(
+          2,
+          clientId
+        );
 
-      saveGameState(
-        `Antwort Runde ${game.round}, Frage ${
-          game.currentQuestionIndex + 1
-        }`
-      );
+        saveGameState(
+          existing
+            ? "Teilnehmer wiederverbunden"
+            : "Teilnehmer beigetreten"
+        );
 
-      callback({
-        ok: true,
-        optionIndex
-      });
-
-      emitGameStateToAll();
-    }
-  );
-
-  /*
-  |--------------------------------------------------------------------------
-  | Frage starten
-  |--------------------------------------------------------------------------
-  */
-
-  socket.on(
-    "admin:startQuestion",
-    (
-      {
-        key,
-        questionIndex
-      } = {},
-      callback = () => {}
-    ) => {
-      if (
-        !socket.data.isAdmin ||
-        key !== ADMIN_KEY
-      ) {
         callback({
-          ok: false,
-          error: "Nicht autorisiert."
+          ok: true,
+
+          participant: {
+            clientId,
+            pseudonym,
+            realName
+          },
+
+          game:
+            gameStateForGuest(
+              clientId
+            )
         });
 
-        return;
+        emitParticipantLists();
+        emitGameStateToAll();
       }
+    );
 
-      const questions =
-        getCurrentQuestions();
+    /* ---------------------------------------------------------------------- */
+    /* Participant answer                                                     */
+    /* ---------------------------------------------------------------------- */
 
-      if (
-        !Number.isInteger(
+    socket.on(
+      "participant:answer",
+      (
+        { optionIndex } = {},
+        callback = () => {}
+      ) => {
+        const clientId =
+          socket.data.clientId;
+
+        if (
+          !clientId ||
+          !participants.has(
+            clientId
+          )
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Du bist nicht angemeldet."
+          });
+
+          return;
+        }
+
+        if (
+          game.phase !==
+            "question" ||
+          game.currentQuestionIndex ===
+            null
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Aktuell kann nicht abgestimmt werden."
+          });
+
+          return;
+        }
+
+        if (
+          game.round === 2 &&
+          isUnmatched(
+            clientId
+          )
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Du verfolgst die Pärchenrunde als Zuschauer."
+          });
+
+          return;
+        }
+
+        if (
+          optionIndex !== 0 &&
+          optionIndex !== 1
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Ungültige Antwort."
+          });
+
+          return;
+        }
+
+        const answerSheet =
+          ensureAnswerSheet(
+            game.round,
+            clientId
+          );
+
+        answerSheet[
+          game.currentQuestionIndex
+        ] = optionIndex;
+
+        saveGameState(
+          `Antwort Runde ${game.round}, Frage ${
+            game.currentQuestionIndex +
+            1
+          }`
+        );
+
+        callback({
+          ok: true,
+          optionIndex
+        });
+
+        emitGameStateToAll();
+      }
+    );
+
+    /* ---------------------------------------------------------------------- */
+    /* Start question                                                         */
+    /* ---------------------------------------------------------------------- */
+
+    socket.on(
+      "admin:startQuestion",
+      (
+        {
+          key,
           questionIndex
-        ) ||
-        questionIndex < 0 ||
-        questionIndex >=
-          questions.length
-      ) {
+        } = {},
+        callback = () => {}
+      ) => {
+        if (
+          !socket.data.isAdmin ||
+          key !== ADMIN_KEY
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Nicht autorisiert."
+          });
+
+          return;
+        }
+
+        const questions =
+          getCurrentQuestions();
+
+        if (
+          !Number.isInteger(
+            questionIndex
+          ) ||
+          questionIndex < 0 ||
+          questionIndex >=
+            questions.length
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Ungültige Frage."
+          });
+
+          return;
+        }
+
+        if (
+          [
+            "matching",
+            "finished"
+          ].includes(
+            game.phase
+          )
+        ) {
+          callback({
+            ok: false,
+            error:
+              "In dieser Spielphase kann keine Frage gestartet werden."
+          });
+
+          return;
+        }
+
+        game.currentQuestionIndex =
+          questionIndex;
+
+        game.phase =
+          "question";
+
+        saveGameState(
+          `Frage ${
+            questionIndex + 1
+          } in Runde ${
+            game.round
+          } gestartet`
+        );
+
+        emitGameStateToAll();
+
         callback({
-          ok: false,
-          error: "Ungültige Frage."
+          ok: true
         });
-
-        return;
       }
+    );
 
-      game.currentQuestionIndex =
-        questionIndex;
+    /* ---------------------------------------------------------------------- */
+    /* Reveal question                                                        */
+    /* ---------------------------------------------------------------------- */
 
-      game.phase = "question";
+    socket.on(
+      "admin:reveal",
+      (
+        { key } = {},
+        callback = () => {}
+      ) => {
+        if (
+          !socket.data.isAdmin ||
+          key !== ADMIN_KEY
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Nicht autorisiert."
+          });
 
-      saveGameState(
-        `Frage ${questionIndex + 1} in Runde ${game.round} gestartet`
-      );
+          return;
+        }
 
-      emitGameStateToAll();
+        if (
+          game.phase !==
+            "question" ||
+          game.currentQuestionIndex ===
+            null
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Es läuft keine aktive Frage."
+          });
 
-      callback({
-        ok: true
-      });
-    }
-  );
+          return;
+        }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Frage aufdecken
-  |--------------------------------------------------------------------------
-  */
+        game.completedQuestions[
+          game.round
+        ].add(
+          game.currentQuestionIndex
+        );
 
-  socket.on(
-    "admin:reveal",
-    (
-      { key } = {},
-      callback = () => {}
-    ) => {
-      if (
-        !socket.data.isAdmin ||
-        key !== ADMIN_KEY
-      ) {
+        game.phase =
+          "reveal";
+
+        saveGameState(
+          `Frage ${
+            game.currentQuestionIndex +
+            1
+          } in Runde ${
+            game.round
+          } aufgedeckt`
+        );
+
+        emitGameStateToAll();
+
         callback({
-          ok: false,
-          error: "Nicht autorisiert."
+          ok: true
         });
-
-        return;
       }
+    );
 
-      if (
-        game.currentQuestionIndex === null
-      ) {
+    /* ---------------------------------------------------------------------- */
+    /* Create matches                                                         */
+    /* ---------------------------------------------------------------------- */
+
+    socket.on(
+      "admin:createMatches",
+      (
+        { key } = {},
+        callback = () => {}
+      ) => {
+        if (
+          !socket.data.isAdmin ||
+          key !== ADMIN_KEY
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Nicht autorisiert."
+          });
+
+          return;
+        }
+
+        if (
+          game.round !== 1
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Matching ist nur nach Runde 1 möglich."
+          });
+
+          return;
+        }
+
+        if (
+          game.completedQuestions[1]
+            .size !==
+          round1Questions.length
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Bitte zuerst alle Fragen der Findungsrunde abschließen."
+          });
+
+          return;
+        }
+
+        if (
+          participants.size < 2
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Für das Matching werden mindestens zwei Teilnehmer benötigt."
+          });
+
+          return;
+        }
+
+        createMatches();
+
+        game.phase =
+          "matching";
+
+        game.currentQuestionIndex =
+          null;
+
+        saveGameState(
+          "Matches gebildet"
+        );
+
+        emitGameStateToAll();
+        emitParticipantLists();
+
         callback({
-          ok: false,
-          error:
-            "Es läuft keine Frage."
+          ok: true
         });
-
-        return;
       }
+    );
 
-      game.completedQuestions[
-        game.round
-      ].add(
-        game.currentQuestionIndex
-      );
+    /* ---------------------------------------------------------------------- */
+    /* Start round 2                                                          */
+    /* ---------------------------------------------------------------------- */
 
-      game.phase = "reveal";
+    socket.on(
+      "admin:startRound2",
+      (
+        { key } = {},
+        callback = () => {}
+      ) => {
+        if (
+          !socket.data.isAdmin ||
+          key !== ADMIN_KEY
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Nicht autorisiert."
+          });
 
-      saveGameState(
-        `Frage ${
-          game.currentQuestionIndex + 1
-        } in Runde ${game.round} aufgedeckt`
-      );
+          return;
+        }
 
-      emitGameStateToAll();
+        if (
+          game.phase !==
+            "matching" ||
+          game.pairs.length === 0
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Es wurden noch keine Matches gebildet."
+          });
 
-      callback({
-        ok: true
-      });
-    }
-  );
+          return;
+        }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Matching erzeugen
-  |--------------------------------------------------------------------------
-  */
+        game.round = 2;
 
-  socket.on(
-    "admin:createMatches",
-    (
-      { key } = {},
-      callback = () => {}
-    ) => {
-      if (
-        !socket.data.isAdmin ||
-        key !== ADMIN_KEY
-      ) {
+        game.phase =
+          "round2_ready";
+
+        game.currentQuestionIndex =
+          null;
+
+        saveGameState(
+          "Pärchenrunde vorbereitet"
+        );
+
+        emitGameStateToAll();
+        emitParticipantLists();
+
         callback({
-          ok: false,
-          error: "Nicht autorisiert."
+          ok: true
         });
-
-        return;
       }
+    );
 
-      if (
-        game.round !== 1
-      ) {
+    /* ---------------------------------------------------------------------- */
+    /* Finish game                                                            */
+    /* ---------------------------------------------------------------------- */
+
+    socket.on(
+      "admin:finish",
+      (
+        { key } = {},
+        callback = () => {}
+      ) => {
+        if (
+          !socket.data.isAdmin ||
+          key !== ADMIN_KEY
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Nicht autorisiert."
+          });
+
+          return;
+        }
+
+        if (
+          game.round !== 2
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Das Finale ist erst nach der Pärchenrunde möglich."
+          });
+
+          return;
+        }
+
+        if (
+          game.completedQuestions[2]
+            .size !==
+          round2Questions.length
+        ) {
+          callback({
+            ok: false,
+            error:
+              "Bitte zuerst alle Fragen der Pärchenrunde abschließen."
+          });
+
+          return;
+        }
+
+        game.phase =
+          "finished";
+
+        game.currentQuestionIndex =
+          null;
+
+        saveGameState(
+          "Spiel beendet"
+        );
+
+        emitGameStateToAll();
+        emitParticipantLists();
+
         callback({
-          ok: false,
-          error:
-            "Matching ist nur nach Runde 1 möglich."
+          ok: true
         });
-
-        return;
       }
+    );
 
-      if (
-        game.completedQuestions[1]
-          .size <
-        round1Questions.length
-      ) {
-        callback({
-          ok: false,
-          error:
-            "Bitte zuerst alle Fragen der Findungsrunde abschließen."
-        });
+    /* ---------------------------------------------------------------------- */
+    /* Disconnect                                                             */
+    /* ---------------------------------------------------------------------- */
 
-        return;
+    socket.on(
+      "disconnect",
+      () => {
+        const clientId =
+          socket.data.clientId;
+
+        if (
+          !clientId ||
+          !participants.has(
+            clientId
+          )
+        ) {
+          return;
+        }
+
+        const participant =
+          participants.get(
+            clientId
+          );
+
+        /*
+          Ignore disconnects from old sockets if the same guest
+          has already reconnected using a newer socket.
+        */
+        if (
+          participant.socketId !==
+          socket.id
+        ) {
+          return;
+        }
+
+        participant.connected =
+          false;
+
+        participant.socketId =
+          null;
+
+        emitParticipantLists();
       }
+    );
+  }
+);
 
-      createMatches();
+/* -------------------------------------------------------------------------- */
+/* Graceful shutdown                                                          */
+/* -------------------------------------------------------------------------- */
 
-      game.phase = "matching";
-      game.currentQuestionIndex =
-        null;
-
-      saveGameState(
-        "Matches gebildet"
-      );
-
-      emitGameStateToAll();
-
-      callback({
-        ok: true
-      });
-    }
-  );
-
-  /*
-  |--------------------------------------------------------------------------
-  | Runde 2 vorbereiten
-  |--------------------------------------------------------------------------
-  */
-
-  socket.on(
-    "admin:startRound2",
-    (
-      { key } = {},
-      callback = () => {}
-    ) => {
-      if (
-        !socket.data.isAdmin ||
-        key !== ADMIN_KEY
-      ) {
-        callback({
-          ok: false,
-          error: "Nicht autorisiert."
-        });
-
-        return;
-      }
-
-      if (
-        game.pairs.length === 0
-      ) {
-        callback({
-          ok: false,
-          error:
-            "Es wurden noch keine Matches gebildet."
-        });
-
-        return;
-      }
-
-      game.round = 2;
-      game.phase =
-        "round2_ready";
-
-      game.currentQuestionIndex =
-        null;
-
-      saveGameState(
-        "Pärchenrunde vorbereitet"
-      );
-
-      emitGameStateToAll();
-
-      callback({
-        ok: true
-      });
-    }
-  );
-
-  /*
-  |--------------------------------------------------------------------------
-  | Spiel beenden
-  |--------------------------------------------------------------------------
-  */
-
-  socket.on(
-    "admin:finish",
-    (
-      { key } = {},
-      callback = () => {}
-    ) => {
-      if (
-        !socket.data.isAdmin ||
-        key !== ADMIN_KEY
-      ) {
-        callback({
-          ok: false,
-          error: "Nicht autorisiert."
-        });
-
-        return;
-      }
-
-      if (
-        game.round !== 2
-      ) {
-        callback({
-          ok: false,
-          error:
-            "Das Finale ist erst nach der Pärchenrunde möglich."
-        });
-
-        return;
-      }
-
-      game.phase = "finished";
-      game.currentQuestionIndex =
-        null;
-
-      saveGameState(
-        "Spiel beendet"
-      );
-
-      emitGameStateToAll();
-
-      callback({
-        ok: true
-      });
-    }
-  );
-
-  /*
-  |--------------------------------------------------------------------------
-  | Disconnect
-  |--------------------------------------------------------------------------
-  */
-
-  socket.on(
-    "disconnect",
-    () => {
-      const clientId =
-        socket.data.clientId;
-
-      if (
-        !clientId ||
-        !participants.has(clientId)
-      ) {
-        return;
-      }
-
-      const participant =
-        participants.get(clientId);
-
-      if (
-        participant.socketId !==
-        socket.id
-      ) {
-        return;
-      }
-
-      participant.connected = false;
-      participant.socketId = null;
-
-      /*
-       * connected/socketId müssen wir bewusst nicht persistieren.
-       * Nach einem Server-Neustart sind sowieso zunächst alle offline.
-       */
-
-      emitParticipantLists();
-    }
-  );
-});
-
-/*
-|--------------------------------------------------------------------------
-| Graceful Shutdown
-|--------------------------------------------------------------------------
-*/
-
-let isShuttingDown = false;
+let isShuttingDown =
+  false;
 
 function shutdown(signal) {
-  if (isShuttingDown) {
+  if (
+    isShuttingDown
+  ) {
     return;
   }
 
-  isShuttingDown = true;
+  isShuttingDown =
+    true;
 
   console.log(
     `\n${signal} empfangen. Speichere Spielstand ...`
@@ -1521,25 +2086,26 @@ function shutdown(signal) {
 
 process.once(
   "SIGINT",
-  () => shutdown("SIGINT")
+  () =>
+    shutdown("SIGINT")
 );
 
 process.once(
   "SIGTERM",
-  () => shutdown("SIGTERM")
+  () =>
+    shutdown("SIGTERM")
 );
 
-/*
-|--------------------------------------------------------------------------
-| Start
-|--------------------------------------------------------------------------
-*/
+/* -------------------------------------------------------------------------- */
+/* Start                                                                      */
+/* -------------------------------------------------------------------------- */
 
 server.listen(
   PORT,
   "0.0.0.0",
   () => {
-    const lanIp = getLanIp();
+    const lanIp =
+      getLanIp();
 
     console.log("");
     console.log(
@@ -1555,11 +2121,5 @@ server.listen(
     );
 
     console.log("");
-
-    if (recovery.exists()) {
-      console.log(
-        "[Recovery] Recovery-System aktiv."
-      );
-    }
   }
 );

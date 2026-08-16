@@ -1,115 +1,649 @@
 <!doctype html>
 <html lang="de">
+
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!--
+    Makes sure the admin interface scales correctly
+    on different screen sizes.
+  -->
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  />
+
   <title>Love-is-Phina – Host</title>
-  <link rel="stylesheet" href="/styles.css" />
+
+  <!--
+    Shared stylesheet for the complete application.
+  -->
+  <link
+    rel="stylesheet"
+    href="/styles.css"
+  />
 </head>
+
 <body class="admin-page">
+
+  <!--
+    ============================================================
+    DECORATIVE HEARTS
+    ============================================================
+
+    These elements are purely decorative.
+    They do not interact with the game logic.
+
+    It is important that none of the existing functional IDs
+    below are changed, because admin.js uses them to find and
+    manipulate the corresponding elements.
+  -->
+
+<!--
+  Decorative heart background.
+  The individual hearts are generated with JavaScript below.
+-->
+<div id="heartBackground"></div>
+
+
+  <!--
+    ============================================================
+    MAIN ADMIN CONTAINER
+    ============================================================
+  -->
+
   <main class="admin-layout">
-    <section id="adminLogin" class="card admin-login">
-      <p class="eyebrow">Spielleitung</p>
-      <h1>Love-is-Phina</h1>
+
+
+    <!--
+      ==========================================================
+      ADMIN LOGIN
+      ==========================================================
+
+      IMPORTANT:
+      The IDs in this area are used directly by admin.js.
+
+      admin.js expects:
+
+      #adminLogin
+      #adminForm
+      #adminKeyInput
+      #adminError
+    -->
+
+    <section
+      id="adminLogin"
+      class="card admin-login"
+    >
+
+      <p class="eyebrow">
+        Spielleitung ♥
+      </p>
+
+      <h1>
+        Love-is-Phina
+      </h1>
+
+
+      <!--
+        admin.js listens for the submit event of #adminForm.
+      -->
+
       <form id="adminForm">
+
         <label>
+
           Admin-Schlüssel
-          <input id="adminKeyInput" type="password" required />
+
+          <!--
+            admin.js reads the entered key from #adminKeyInput.
+          -->
+
+          <input
+            id="adminKeyInput"
+            type="password"
+            required
+          />
+
         </label>
-        <button type="submit">Host-Ansicht öffnen</button>
-        <p id="adminError" class="error"></p>
+
+
+        <button type="submit">
+          Host-Ansicht öffnen ♥
+        </button>
+
+
+        <!--
+          Login errors are displayed here.
+        -->
+
+        <p
+          id="adminError"
+          class="error"
+        ></p>
+
       </form>
+
     </section>
 
-    <div id="dashboard" class="hidden">
+
+    <!--
+      ==========================================================
+      DASHBOARD
+      ==========================================================
+
+      Initially hidden.
+
+      After a successful admin login, admin.js hides
+      #adminLogin and shows #dashboard.
+    -->
+
+    <div
+      id="dashboard"
+      class="hidden"
+    >
+
+
+      <!--
+        ========================================================
+        HEADER
+        ========================================================
+      -->
+
       <header class="admin-header">
+
         <div>
-          <p class="eyebrow">Love-is-Phina</p>
-          <h1 id="roundHeading">Findungsrunde</h1>
+
+          <p class="eyebrow">
+            Love-is-Phina ♥
+          </p>
+
+          <!--
+            Updated dynamically by admin.js.
+          -->
+
+          <h1 id="roundHeading">
+            Findungsrunde
+          </h1>
+
         </div>
+
+
         <div class="header-badges">
-          <span id="phaseBadge" class="pill"></span>
-          <span id="connectionState" class="pill">verbunden</span>
+
+          <!--
+            Displays the current game phase.
+          -->
+
+          <span
+            id="phaseBadge"
+            class="pill"
+          ></span>
+
+
+          <!--
+            Displays the Socket.IO connection status.
+          -->
+
+          <span
+            id="connectionState"
+            class="pill"
+          >
+            verbunden
+          </span>
+
         </div>
+
       </header>
 
+
+      <!--
+        ========================================================
+        DASHBOARD GRID
+        ========================================================
+      -->
+
       <section class="dashboard-grid">
+
+
+        <!--
+          ======================================================
+          JOIN / QR CODE
+          ======================================================
+        -->
+
         <article class="card join-card">
-          <h2>Mitmachen</h2>
-          <img id="qrCode" alt="QR-Code zum Spiel" />
-          <div id="joinUrl" class="join-url"></div>
-          <p class="muted">Laptop und Smartphones müssen im selben WLAN sein.</p>
+
+          <p class="eyebrow">
+            Join the Love ♥
+          </p>
+
+          <h2>
+            Mitmachen
+          </h2>
+
+
+          <!--
+            The QR code image is loaded by admin.js.
+          -->
+
+          <img
+            id="qrCode"
+            alt="QR-Code zum Spiel"
+          />
+
+
+          <!--
+            Displays the local URL for the guests.
+          -->
+
+          <div
+            id="joinUrl"
+            class="join-url"
+          ></div>
+
+
+          <p class="muted">
+            Laptop und Smartphones müssen
+            im selben WLAN sein.
+          </p>
+
         </article>
+
+
+        <!--
+          ======================================================
+          MAIN STAGE
+          ======================================================
+
+          This area contains the currently active question,
+          matching information or the final winner.
+        -->
 
         <article class="card stage-card">
+
+
+          <!--
+            Shows the current round and number of answers.
+          -->
+
           <div class="top-row">
-            <span id="stageRound" class="pill"></span>
-            <span id="answerCounter" class="muted"></span>
+
+            <span
+              id="stageRound"
+              class="pill"
+            ></span>
+
+            <span
+              id="answerCounter"
+              class="muted"
+            ></span>
+
           </div>
+
+
+          <!--
+            ----------------------------------------------------
+            EMPTY / READY STATE
+            ----------------------------------------------------
+
+            Displayed when no question is currently active.
+          -->
 
           <div id="stageEmpty">
-            <p class="eyebrow">Bereit?</p>
-            <h2 id="emptyTitle">Die Findungsrunde kann beginnen.</h2>
-            <p id="emptyText">Wähle unten eine Frage aus und starte sie.</p>
+
+            <p class="eyebrow">
+              Bereit? ♥
+            </p>
+
+            <h2 id="emptyTitle">
+              Die Findungsrunde kann beginnen.
+            </h2>
+
+            <p id="emptyText">
+              Wähle unten eine Frage aus
+              und starte sie.
+            </p>
+
           </div>
 
-          <div id="stageQuestion" class="hidden">
-            <p class="eyebrow">Aktuelle Frage</p>
+
+          <!--
+            ----------------------------------------------------
+            ACTIVE QUESTION
+            ----------------------------------------------------
+          -->
+
+          <div
+            id="stageQuestion"
+            class="hidden"
+          >
+
+            <p class="eyebrow">
+              Aktuelle Frage ♥
+            </p>
+
+
+            <!--
+              Question text inserted by admin.js.
+            -->
+
             <h2 id="stageQuestionText"></h2>
-            <div id="stageOptions" class="stage-options"></div>
+
+
+            <!--
+              Both answer options are inserted dynamically.
+            -->
+
+            <div
+              id="stageOptions"
+              class="stage-options"
+            ></div>
+
+
+            <!--
+              Result bars are inserted here after reveal.
+            -->
+
             <div id="stageResults"></div>
 
+
             <div class="button-row">
-              <button id="revealButton" type="button">Antworten aufdecken</button>
+
+              <!--
+                Tells the server to reveal the current question.
+              -->
+
+              <button
+                id="revealButton"
+                type="button"
+              >
+                Antworten aufdecken ♥
+              </button>
+
             </div>
+
           </div>
 
-          <div id="matchingStage" class="hidden">
-            <p class="eyebrow">Matching abgeschlossen</p>
-            <h2>It’s a match! 💞</h2>
-            <p>Die anonymen Antworten aus der Findungsrunde wurden miteinander verglichen.</p>
-            <button id="startRound2Button" type="button">Pärchenrunde vorbereiten</button>
+
+          <!--
+            ----------------------------------------------------
+            MATCHING STAGE
+            ----------------------------------------------------
+
+            Displayed after Round 1 matching has been completed.
+          -->
+
+          <div
+            id="matchingStage"
+            class="hidden"
+          >
+
+            <p class="eyebrow">
+              Matching abgeschlossen ♥
+            </p>
+
+            <h2>
+              It’s a Match! 💞
+            </h2>
+
+            <p>
+              Die anonymen Antworten aus der
+              Findungsrunde wurden miteinander verglichen.
+            </p>
+
+
+            <!--
+              Moves the game into Round 2.
+            -->
+
+            <button
+              id="startRound2Button"
+              type="button"
+            >
+              Pärchenrunde vorbereiten ♥
+            </button>
+
           </div>
 
-          <div id="finalStage" class="hidden">
-            <p class="eyebrow">Finale</p>
-            <h2 id="winnerTitle">Gewinnerpaar</h2>
+
+          <!--
+            ----------------------------------------------------
+            FINAL STAGE
+            ----------------------------------------------------
+          -->
+
+          <div
+            id="finalStage"
+            class="hidden"
+          >
+
+            <p class="eyebrow">
+              Finale ♥
+            </p>
+
+            <h2 id="winnerTitle">
+              Gewinnerpaar
+            </h2>
+
+
+            <!--
+              Winner information is inserted dynamically.
+            -->
+
             <div id="winnerContent"></div>
+
           </div>
+
         </article>
+
+
+        <!--
+          ======================================================
+          PARTICIPANTS
+          ======================================================
+        -->
 
         <article class="card participants-card">
-          <h2>Teilnehmende <span id="participantCount"></span></h2>
-          <p id="privacyHint" class="muted small">In der Findungsrunde bleiben die echten Namen verborgen.</p>
+
+          <h2>
+            Teilnehmende ♥
+
+            <span id="participantCount"></span>
+          </h2>
+
+
+          <!--
+            Explains whether real names are currently visible.
+          -->
+
+          <p
+            id="privacyHint"
+            class="muted small"
+          >
+            In der Findungsrunde bleiben
+            die echten Namen verborgen.
+          </p>
+
+
+          <!--
+            Participant rows are created dynamically.
+          -->
+
           <div id="participants"></div>
+
         </article>
+
+
+        <!--
+          ======================================================
+          QUESTIONS
+          ======================================================
+        -->
 
         <article class="card questions-card">
+
           <div class="top-row">
-            <h2 id="questionListTitle">Fragen · Findungsrunde</h2>
-            <span id="questionProgress" class="muted small"></span>
+
+            <h2 id="questionListTitle">
+              Fragen · Findungsrunde
+            </h2>
+
+
+            <!--
+              Example: "3/10 abgeschlossen"
+            -->
+
+            <span
+              id="questionProgress"
+              class="muted small"
+            ></span>
+
           </div>
+
+
+          <!--
+            admin.js creates the question buttons here.
+          -->
+
           <div id="questionList"></div>
-          <button id="matchButton" class="match-button hidden" type="button">Matches bilden</button>
-          <button id="finishButton" class="match-button hidden" type="button">Finale auswerten</button>
+
+
+          <!--
+            Visible after all Round 1 questions are completed.
+          -->
+
+          <button
+            id="matchButton"
+            class="match-button hidden"
+            type="button"
+          >
+            Matches bilden ♥
+          </button>
+
+
+          <!--
+            Visible after all Round 2 questions are completed.
+          -->
+
+          <button
+            id="finishButton"
+            class="match-button hidden"
+            type="button"
+          >
+            Finale auswerten ♥
+          </button>
+
         </article>
 
-        <article id="pairsCard" class="card pairs-card hidden">
+
+        <!--
+          ======================================================
+          PAIR / MATCH BOARD
+          ======================================================
+
+          Hidden until matches have been created.
+
+          During Round 2 this area also shows the live
+          matching score of every couple.
+        -->
+
+        <article
+          id="pairsCard"
+          class="card pairs-card hidden"
+        >
+
           <div class="top-row">
+
             <div>
-              <p class="eyebrow">Matching Board</p>
-              <h2>Die Pärchen</h2>
+
+              <p class="eyebrow">
+                Matching Board ♥
+              </p>
+
+              <h2>
+                Die Pärchen
+              </h2>
+
             </div>
-            <span id="pairRoundStatus" class="pill"></span>
+
+
+            <!--
+              Indicates whether the displayed values are
+              Matching Round scores or Couples Round scores.
+            -->
+
+            <span
+              id="pairRoundStatus"
+              class="pill"
+            ></span>
+
           </div>
-          <div id="pairsBoard" class="pairs-board"></div>
+
+
+          <!--
+            Couple cards are generated dynamically.
+          -->
+
+          <div
+            id="pairsBoard"
+            class="pairs-board"
+          ></div>
+
+
+          <!--
+            If the number of participants is odd,
+            the unmatched participant is displayed here.
+          -->
+
           <div id="unmatchedBox"></div>
+
         </article>
+
       </section>
+
     </div>
+
   </main>
 
+
+  <!--
+    ============================================================
+    HEARTS
+    ============================================================
+  
+    Provides an anmiated background with hearts.
+  -->
+
+<script src="/decoration.js"></script>
+
+
+  <!--
+    ============================================================
+    SOCKET.IO
+    ============================================================
+
+    Provides the real-time connection to the Node.js server.
+  -->
+
   <script src="/socket.io/socket.io.js"></script>
+
+
+  <!--
+    ============================================================
+    ADMIN APPLICATION LOGIC
+    ============================================================
+
+    IMPORTANT:
+
+    admin.js relies on many of the element IDs above.
+
+    Changing an ID in this HTML file without also updating
+    admin.js can cause the application to stop working.
+  -->
+
   <script src="/admin.js"></script>
+
 </body>
+
 </html>
