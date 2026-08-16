@@ -340,8 +340,8 @@ function normalizeRecoveredPair(
       )
         ? pair.round1Agreement
         : Number.isInteger(
-              pair.round1Matches
-            )
+          pair.round1Matches
+        )
           ? pair.round1Matches
           : 0,
 
@@ -431,13 +431,13 @@ function restoreGameState(
       savedState.game
         .currentQuestionIndex
     ) &&
-    savedState.game
-      .currentQuestionIndex >= 0 &&
-    savedState.game
-      .currentQuestionIndex <
+      savedState.game
+        .currentQuestionIndex >= 0 &&
+      savedState.game
+        .currentQuestionIndex <
       currentQuestions.length
       ? savedState.game
-          .currentQuestionIndex
+        .currentQuestionIndex
       : null;
 
   game.answers[1].clear();
@@ -462,7 +462,7 @@ function restoreGameState(
     ) {
       const storedSheet =
         sourceAnswers[
-          clientId
+        clientId
         ];
 
       game.answers[
@@ -476,8 +476,8 @@ function restoreGameState(
         )
           ? [...storedSheet]
           : new Array(
-              expectedLength
-            ).fill(null)
+            expectedLength
+          ).fill(null)
       );
     }
   }
@@ -488,7 +488,7 @@ function restoreGameState(
         .completedQuestions?.[1]
     )
       ? savedState.game
-          .completedQuestions[1]
+        .completedQuestions[1]
       : [];
 
   const completedRound2 =
@@ -497,7 +497,7 @@ function restoreGameState(
         .completedQuestions?.[2]
     )
       ? savedState.game
-          .completedQuestions[2]
+        .completedQuestions[2]
       : [];
 
   game.completedQuestions[1] =
@@ -507,7 +507,7 @@ function restoreGameState(
           Number.isInteger(index) &&
           index >= 0 &&
           index <
-            round1Questions.length
+          round1Questions.length
       )
     );
 
@@ -518,7 +518,7 @@ function restoreGameState(
           Number.isInteger(index) &&
           index >= 0 &&
           index <
-            round2Questions.length
+          round2Questions.length
       )
     );
 
@@ -527,21 +527,21 @@ function restoreGameState(
       savedState.game.pairs
     )
       ? savedState.game.pairs
-          .map(
-            normalizeRecoveredPair
-          )
-          .filter(Boolean)
+        .map(
+          normalizeRecoveredPair
+        )
+        .filter(Boolean)
       : [];
 
   game.unmatchedClientId =
     savedState.game
       .unmatchedClientId &&
-    participants.has(
-      savedState.game
-        .unmatchedClientId
-    )
-      ? savedState.game
+      participants.has(
+        savedState.game
           .unmatchedClientId
+      )
+      ? savedState.game
+        .unmatchedClientId
       : null;
 }
 
@@ -887,8 +887,8 @@ function getPairResults() {
             )
               ? pair.round1Agreement
               : Number.isInteger(
-                    pair.round1Matches
-                  )
+                pair.round1Matches
+              )
                 ? pair.round1Matches
                 : 0,
 
@@ -1052,7 +1052,7 @@ function getCurrentQuestionForGuest() {
 
   const question =
     getCurrentQuestions()[
-      game.currentQuestionIndex
+    game.currentQuestionIndex
     ];
 
   if (!question) {
@@ -1100,7 +1100,7 @@ function getCurrentAnswerCounts() {
 
     const answer =
       answerSheet[
-        game.currentQuestionIndex
+      game.currentQuestionIndex
       ];
 
     if (
@@ -1153,10 +1153,10 @@ function gameStateForGuest(
 
   const ownAnswer =
     game.currentQuestionIndex !==
-    null
+      null
       ? answerSheet[
-          game.currentQuestionIndex
-        ]
+      game.currentQuestionIndex
+      ]
       : null;
 
   const partner =
@@ -1191,17 +1191,17 @@ function gameStateForGuest(
 
     completedQuestions: [
       ...game.completedQuestions[
-        game.round
+      game.round
       ]
     ],
 
     partner:
       partner &&
-      shouldRevealRealNames()
+        shouldRevealRealNames()
         ? {
-            realName:
-              partner.realName
-          }
+          realName:
+            partner.realName
+        }
         : null,
 
     isMatched:
@@ -1225,10 +1225,10 @@ function gameStateForAdmin() {
 
   const question =
     game.currentQuestionIndex !==
-    null
+      null
       ? currentQuestions[
-          game.currentQuestionIndex
-        ] || null
+      game.currentQuestionIndex
+      ] || null
       : null;
 
   const answerCounts =
@@ -1266,7 +1266,7 @@ function gameStateForAdmin() {
 
     completedQuestions: [
       ...game.completedQuestions[
-        game.round
+      game.round
       ]
     ],
 
@@ -1297,6 +1297,23 @@ function gameStateForAdmin() {
         ? getWinners()
         : []
   };
+}
+
+function resetGameState() {
+  participants.clear();
+
+  game.round = 1;
+  game.phase = "lobby";
+  game.currentQuestionIndex = null;
+
+  game.answers[1].clear();
+  game.answers[2].clear();
+
+  game.completedQuestions[1].clear();
+  game.completedQuestions[2].clear();
+
+  game.pairs = [];
+  game.unmatchedClientId = null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1392,7 +1409,7 @@ io.on(
       "admin:join",
       (
         { key } = {},
-        callback = () => {}
+        callback = () => { }
       ) => {
         if (
           key !== ADMIN_KEY
@@ -1437,7 +1454,7 @@ io.on(
           realName,
           pseudonym
         } = {},
-        callback = () => {}
+        callback = () => { }
       ) => {
         clientId =
           normalizeName(
@@ -1549,7 +1566,7 @@ io.on(
       "participant:answer",
       (
         { optionIndex } = {},
-        callback = () => {}
+        callback = () => { }
       ) => {
         const clientId =
           socket.data.clientId;
@@ -1571,9 +1588,9 @@ io.on(
 
         if (
           game.phase !==
-            "question" ||
+          "question" ||
           game.currentQuestionIndex ===
-            null
+          null
         ) {
           callback({
             ok: false,
@@ -1623,9 +1640,8 @@ io.on(
         ] = optionIndex;
 
         saveGameState(
-          `Antwort Runde ${game.round}, Frage ${
-            game.currentQuestionIndex +
-            1
+          `Antwort Runde ${game.round}, Frage ${game.currentQuestionIndex +
+          1
           }`
         );
 
@@ -1649,7 +1665,7 @@ io.on(
           key,
           questionIndex
         } = {},
-        callback = () => {}
+        callback = () => { }
       ) => {
         if (
           !socket.data.isAdmin ||
@@ -1673,7 +1689,7 @@ io.on(
           ) ||
           questionIndex < 0 ||
           questionIndex >=
-            questions.length
+          questions.length
         ) {
           callback({
             ok: false,
@@ -1708,10 +1724,8 @@ io.on(
           "question";
 
         saveGameState(
-          `Frage ${
-            questionIndex + 1
-          } in Runde ${
-            game.round
+          `Frage ${questionIndex + 1
+          } in Runde ${game.round
           } gestartet`
         );
 
@@ -1731,7 +1745,7 @@ io.on(
       "admin:reveal",
       (
         { key } = {},
-        callback = () => {}
+        callback = () => { }
       ) => {
         if (
           !socket.data.isAdmin ||
@@ -1748,9 +1762,9 @@ io.on(
 
         if (
           game.phase !==
-            "question" ||
+          "question" ||
           game.currentQuestionIndex ===
-            null
+          null
         ) {
           callback({
             ok: false,
@@ -1771,11 +1785,9 @@ io.on(
           "reveal";
 
         saveGameState(
-          `Frage ${
-            game.currentQuestionIndex +
-            1
-          } in Runde ${
-            game.round
+          `Frage ${game.currentQuestionIndex +
+          1
+          } in Runde ${game.round
           } aufgedeckt`
         );
 
@@ -1795,7 +1807,7 @@ io.on(
       "admin:createMatches",
       (
         { key } = {},
-        callback = () => {}
+        callback = () => { }
       ) => {
         if (
           !socket.data.isAdmin ||
@@ -1877,7 +1889,7 @@ io.on(
       "admin:startRound2",
       (
         { key } = {},
-        callback = () => {}
+        callback = () => { }
       ) => {
         if (
           !socket.data.isAdmin ||
@@ -1894,7 +1906,7 @@ io.on(
 
         if (
           game.phase !==
-            "matching" ||
+          "matching" ||
           game.pairs.length === 0
         ) {
           callback({
@@ -1935,7 +1947,7 @@ io.on(
       "admin:finish",
       (
         { key } = {},
-        callback = () => {}
+        callback = () => { }
       ) => {
         if (
           !socket.data.isAdmin ||
@@ -1991,6 +2003,73 @@ io.on(
 
         callback({
           ok: true
+        });
+      }
+    );
+
+    /* -------------------------------------------------------------------------- */
+    /* Game reset                                                                 */
+    /* -------------------------------------------------------------------------- */
+
+    socket.on(
+      "admin:resetGame",
+      (
+        { key } = {},
+        callback = () => { }
+      ) => {
+        if (
+          !socket.data.isAdmin ||
+          key !== ADMIN_KEY
+        ) {
+          callback({
+            ok: false,
+            error: "Nicht autorisiert."
+          });
+
+          return;
+        }
+
+        // Remove recovery files first.
+        recovery.clear();
+
+        // Reset the complete in-memory game state.
+        resetGameState();
+
+        // Remove participant associations from all guest sockets.
+        for (
+          const connectedSocket
+          of io.sockets.sockets.values()
+        ) {
+          if (!connectedSocket.data.isAdmin) {
+            connectedSocket.data.clientId = null;
+          }
+        }
+
+        // Tell every connected guest to clear localStorage
+        // and return to the registration screen.
+        io.emit("game:reset");
+
+        const freshGame =
+          gameStateForAdmin();
+
+        const freshParticipants =
+          publicParticipantsForAdmin();
+
+        // Update all connected admin views.
+        io.to("admin").emit(
+          "participants:update",
+          freshParticipants
+        );
+
+        io.to("admin").emit(
+          "game:update",
+          freshGame
+        );
+
+        callback({
+          ok: true,
+          game: freshGame,
+          participants: freshParticipants
         });
       }
     );

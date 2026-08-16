@@ -28,22 +28,17 @@
 
   <!--
     ============================================================
-    DECORATIVE HEARTS
+    DECORATIVE HEART BACKGROUND
     ============================================================
 
-    These elements are purely decorative.
-    They do not interact with the game logic.
+    The individual hearts are generated dynamically
+    by HeartDecoration.js.
 
-    It is important that none of the existing functional IDs
-    below are changed, because admin.js uses them to find and
-    manipulate the corresponding elements.
+    This container itself does not contain any hearts.
+    JavaScript creates and inserts them after the page loads.
   -->
 
-<!--
-  Decorative heart background.
-  The individual hearts are generated with JavaScript below.
--->
-<div id="heartBackground"></div>
+  <div id="heartBackground"></div>
 
 
   <!--
@@ -534,6 +529,37 @@
             Finale auswerten ♥
           </button>
 
+
+          <!--
+            ====================================================
+            RESET GAME
+            ====================================================
+
+            This button resets the entire game.
+
+            admin.js asks the host for confirmation before
+            sending the reset request to the server.
+
+            The server then:
+            - removes all participants
+            - removes all answers
+            - removes all matches
+            - resets both rounds
+            - deletes the recovery state
+            - tells all connected guests to reset
+
+            Connected guests are automatically sent back
+            to the registration screen.
+          -->
+
+          <button
+            id="resetGameButton"
+            class="reset-game-button"
+            type="button"
+          >
+            Spiel zurücksetzen
+          </button>
+
         </article>
 
 
@@ -609,13 +635,17 @@
 
   <!--
     ============================================================
-    HEARTS
+    HEART DECORATION
     ============================================================
-  
-    Provides an anmiated background with hearts.
+
+    HeartDecoration.js contains the class that generates
+    the animated heart elements inside #heartBackground.
+
+    It must be loaded BEFORE admin.js because admin.js
+    creates an instance of HeartDecoration.
   -->
 
-<script src="/decoration.js"></script>
+  <script src="/decoration.js"></script>
 
 
   <!--
@@ -633,6 +663,9 @@
     ============================================================
     ADMIN APPLICATION LOGIC
     ============================================================
+
+    admin.js contains the complete client-side logic
+    for the host interface.
 
     IMPORTANT:
 
