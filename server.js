@@ -19,6 +19,7 @@ const io = new Server(server);
 
 const PORT = Number(process.env.PORT || 3000);
 const ADMIN_KEY = process.env.ADMIN_KEY || "hochzeit2026";
+const PUBLIC_URL = process.env.PUBLIC_URL || null;
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -1362,9 +1363,20 @@ function emitGameStateToAll() {
 app.get(
   "/api/join-info",
   async (_req, res) => {
+
     try {
+
+      /*
+        If a public Cloudflare URL is configured,
+        use it for the guest QR code.
+
+        Otherwise fall back to the local LAN address.
+      */
+
       const joinUrl =
+        PUBLIC_URL ||
         `http://${getLanIp()}:${PORT}`;
+
 
       const qrDataUrl =
         await QRCode.toDataURL(
@@ -1375,11 +1387,15 @@ app.get(
           }
         );
 
+
       res.json({
         joinUrl,
-        qrDataUrl
+        qrDataUrl,
+        public: Boolean(PUBLIC_URL)
       });
+
     } catch (error) {
+
       console.error(
         "QR-Code konnte nicht erzeugt werden:",
         error
@@ -2183,8 +2199,9 @@ server.listen(
   PORT,
   "0.0.0.0",
   () => {
-    const lanIp =
-      getLanIp();
+
+    const lanUrl =
+      `http://${getLanIp()}:${PORT}`;
 
     console.log("");
     console.log(
@@ -2192,8 +2209,14 @@ server.listen(
     );
 
     console.log(
-      `Gäste:  http://${lanIp}:${PORT}`
+      `Lokal:  ${lanUrl}`
     );
+
+    if (PUBLIC_URL) {
+      console.log(
+        `Public: ${PUBLIC_URL}`
+      );
+    }
 
     console.log(
       `Admin:  http://localhost:${PORT}/admin`

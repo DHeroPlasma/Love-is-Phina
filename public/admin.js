@@ -961,8 +961,8 @@ function renderWinners() {
 
   title.textContent =
     game.winners.length > 1
-      ? "Gewinnerpaare – Gleichstand! 🏆"
-      : "Gewinnerpaar 🏆";
+      ? "Diese beiden Turteltauben sollten auf ein Date! – Gleichstand! 🏆"
+      : "Diese beiden Turteltauben sollten auf ein Date! 🏆";
 
   content.innerHTML =
     game.winners
