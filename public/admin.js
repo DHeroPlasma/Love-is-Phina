@@ -841,8 +841,19 @@ function renderPairs() {
       ? "Findungs-Match"
       : "Pärchen-Score";
 
+
+  /*
+    Only show the ten highest-ranked pairs in the admin pair board.
+
+    This is a display-only change:
+    all pairs remain part of the server-side game state and scoring.
+  */
+  const pairsToDisplay =
+    game.pairs.slice(0, 10);
+
+
   board.innerHTML =
-    game.pairs
+    pairsToDisplay
       .map(
         (
           pair,
